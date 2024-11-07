@@ -60,7 +60,7 @@ diyable/
 
 2. **Run Docker Container**:
    ```sh
-   docker run -d -p 5121:5121 --name diyable-container diyable
+   docker run -d -p 5010:5010 --name diyable-container diyable
    ```
 
 3. **Access the Container** (optional, for debugging or inspection):
