@@ -1,5 +1,3 @@
-//- views/index.pug
-
 doctype html
 html(lang="fr")
   head
@@ -18,26 +16,26 @@ html(lang="fr")
           li: a(href="#about") À Propos
           li: a(href="/contact") Contact
     main
-      section.hero
-        h1 Partagez et Découvrez des Projets DIY Inspirants !
-        p Rejoignez notre communauté passionnée de bricolage et d'IoT.
-        a(href="#projets")
-          button(type="button") Découvrir les Projets
       section#projets
-        h2 Projets Récents
+        h1 Nos Projets
 
-        //- Affichage des projets récents
-        if recentProjects && recentProjects.length > 0
+        //- Section des filtres
+        div.filters
+          button.filter-button(data-category="all") Tous
+          button.filter-button(data-category="iot") IoT
+          button.filter-button(data-category="craft") Artisanat
+          button.filter-button(data-category="autre") Autre
+
+        if projects.length
           div.project-grid
-            each project in recentProjects
+            each project in projects
               .project-card(data-category=project.category)
                 img(src=`/images/${project.image}` alt=`${project.name}`)
                 h3= project.name
                 p= project.description
-                a(href=`/projets/${project.id}`)
-                  button(type="button") Voir le Projet
+                a(href=`/projets/${project.id}`) Voir plus
         else
-          p Aucun projet récent disponible pour le moment.
+          p Aucun projet disponible pour le moment.
     footer
       p © 2024 DIY able - Tous droits réservés
     script(src="/script.js")
