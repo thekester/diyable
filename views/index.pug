@@ -1,0 +1,41 @@
+doctype html
+html(lang="fr")
+  head
+    meta(charset="UTF-8")
+    meta(name="viewport" content="width=device-width, initial-scale=1.0")
+    title DIY able - Partage de Projets DIY
+    link(rel="stylesheet" href="styles.css")
+  body
+    header
+      div.logo
+        img(src="images/logo-diyable.jpeg" alt="DIY able logo")
+      nav
+        ul
+          li: a(href="#") Accueil
+          li: a(href="#projets") Projets
+          li: a(href="#about") À Propos
+          li: a(href="/contact") Contact
+    main
+      section.hero
+        h1 Partagez et Découvrez des Projets DIY Inspirants !
+        p Rejoignez notre communauté passionnée de bricolage et d'IoT.
+        a(href="#projets")
+            button(type="button") Découvrir les Projets
+      section#projets
+        h2 Projets Récents
+        div.project-grid
+          // Exemple de projet
+          .project-card(data-category="iot")
+            img(src="images/projet-iot-exemple.jpg" alt="Projet IoT Exemple")
+            h3 Projet IoT Exemple
+            p Découvrez comment ce projet IoT peut transformer votre quotidien.
+            a(href="#projets/id") Voir plus
+          .project-card(data-category="craft")
+            img(src="images/projet-artisanat-exemple.jpg" alt="Projet Artisanat Exemple")
+            h3 Projet Artisanat Exemple
+            p Un projet de bricolage pour ajouter une touche personnelle à votre maison.
+            a(href="#projets/id") Voir plus
+    footer
+      p © 2024 DIY able - Tous droits réservés
+    script(src="script.js")
+
