@@ -4,6 +4,90 @@
 
 A platform for sharing and discovering Do It Yourself (DIY) projects, from crafts to tech innovations. Whether you enjoy woodworking, home improvement, or creative electronics, this is the place to get inspired and inspire others.
 
+## Project Structure
+
+```
+diyable/
+│
+├── app.js
+├── package.json
+├── package-lock.json          # Generated automatically after `npm init -y`
+├── Dockerfile
+├── .dockerignore              
+│
+├── actions-runner/             # For the github workflow
+├── bdd/
+│   └── tavenel.db
+├── views/
+│   └── index.pug│
+├── public/
+│   └── code/
+│       └── jquery.min.js
+│   └── style/
+│       └── index.css
+│
+│
+└── node_modules/              # Generated automatically after `npm install`
+```
+
+## Setting Up the Project
+
+1. **Create the Project Directories**:
+   ```sh
+   mkdir -p diyable/views
+   mkdir -p diyable/public/code
+   ```
+
+2. **Add jQuery Library**: 
+   - Download the jQuery file from: [jQuery 3.7.1](https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js) and save it in the `public/code/` directory.
+
+3. **Initialize Node.js Project**:
+   ```sh
+   cd diyable/
+   npm init -y
+   ```
+
+4. **Install Dependencies**:
+   ```sh
+   npm install express pug sqlite3 dotenv
+   ```
+## Docker Configuration
+
+1. **Build Docker Image**:
+   ```sh
+   docker build -t diyable .
+   ```
+
+2. **Run Docker Container**:
+   ```sh
+   docker run -d -p 5121:5121 --name diyable-container diyable
+   ```
+
+3. **Access the Container** (optional, for debugging or inspection):
+   ```sh
+   docker exec -it diyable-container /bin/bash
+   ```
+
+## Alternative Method with Docker Compose
+
+1. **Build and Run Using Docker Compose**:
+   ```sh
+   docker-compose build
+   docker-compose up -d
+   ```
+
+2. **View Logs**:
+   ```sh
+   docker-compose logs -f
+   ```
+
+## Simple Method to Start the Application
+
+1. **Run Node Application Directly**:
+   ```sh
+   node app.js
+   ```
+
 ## Features
 
 ### User Accounts
@@ -46,10 +130,10 @@ A platform for sharing and discovering Do It Yourself (DIY) projects, from craft
 
 1. **Switch to Docker Environment Branch**:
    ```sh
-   git checkout -b CreateTheDockerEnvironment origin/CreateTheDockerEnvironment
+   git checkout -b newbranch origin/newbranch
    ```
    
-   This will set up a new branch `CreateTheDockerEnvironment` that tracks `origin/CreateTheDockerEnvironment`.
+   This will set up a new branch `newbranch` that tracks `origin/newbranch`.
 
 ## Contribution
 Feel free to contribute to the platform by:

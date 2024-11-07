@@ -1,0 +1,14 @@
+services:
+  app:
+    build: .
+    ports:
+      - "${PORT}:${PORT}"  # Assurez-vous que votre application écoute sur process.env.PORT
+    volumes:
+      - ./bdd/:/app/bdd/   # Monte le fichier de base de données
+      - .:/app  # Monte le répertoire actuel dans /app dans le conteneur
+    env_file:
+      - .env  # Charge les variables d'environnement depuis .env
+    restart: always
+
+volumes:
+  diyable_bdd:
