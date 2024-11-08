@@ -14,18 +14,24 @@ header {
   justify-content: space-between;
   align-items: center;
   padding: 20px 10%;
+  padding-right: 10px;
   background-color: #fff;
   border-bottom: 2px solid #eee;
 }
 
 header .logo img {
-  height: 50px;
+  height: 80px;
 }
 
 nav ul {
   list-style: none;
   display: flex;
   gap: 20px;
+  align-items: center;
+}
+
+nav ul li:last-child {
+    margin-left: 60px;
 }
 
 nav ul li a {
@@ -213,6 +219,35 @@ nav ul li a:hover {
 .hero button:hover {
   background-color: #218838;
   transform: translateY(-2px);
+}
+
+/* Styles pour le bouton de connexion */
+nav button {
+  padding: 10px 20px;
+  font-size: 1rem;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.2s;
+}
+
+nav button:hover {
+  background-color: #0056b3;
+  transform: translateY(-2px);
+}
+
+nav button.active {
+  background-color: #0056b3;
+  transform: translateY(-2px);
+}
+
+footer {
+  text-align: center;
+  padding: 20px;
+  background-color: #333;
+  color: white;
 }
 
 /* Styles Responsives */

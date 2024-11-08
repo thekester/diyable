@@ -1,11 +1,14 @@
-// app.js
-
 require('dotenv').config(); // Charger les variables d'environnement depuis .env
 const express = require('express');
 const app = express();
 const path = require('path');
 const sqlite3 = require('sqlite3').verbose(); // Import sqlite3
 const fs = require('fs');
+const crypto = require('crypto');
+const bodyParser = require('body-parser');
+
+// Middleware
+app.use(bodyParser.urlencoded({ extended: true }));
 
 // Pour servir des fichiers statiques (comme le CSS, le JavaScript)
 app.use(express.static('public'));
@@ -43,7 +46,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
     console.log('Connecté à la base de données SQLite.');
 
     // Créer la table des projets si elle n'existe pas
-    const createTableQuery = `
+    const createTableProjetQuery = `
       CREATE TABLE IF NOT EXISTS projects (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         date TEXT NOT NULL,
@@ -53,21 +56,38 @@ const db = new sqlite3.Database(dbPath, (err) => {
         image TEXT
       )
     `;
+    const createTableUsersQuery = `
+      CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE,
+        email TEXT,
+        password TEXT,
+        salt TEXT
+      )
+    `;
 
-    db.run(createTableQuery, (err) => {
+    db.run(createTableProjetQuery, (err) => {
       if (err) {
-        console.error('Erreur lors de la création de la table:', err.message);
+        console.error('Erreur lors de la création de la table projet:', err.message);
       } else {
         console.log('Table "projects" créée ou déjà existante.');
         // Vérifier et insérer des données initiales si nécessaire
-        checkAndInsertInitialData();
+        checkAndInsertInitialProjetData();
+      }
+    });
+    db.run(createTableUsersQuery, (err) => {
+      if (err) {
+        console.error('Erreur lors de la création de la table users:', err.message);
+      } else {
+        console.log('Table "users" créée ou déjà existante.');
+        // Vérifier et insérer des données initiales si nécessaire
       }
     });
   }
 });
 
 // Fonction pour vérifier si la table est vide et insérer des données initiales
-const checkAndInsertInitialData = () => {
+const checkAndInsertInitialProjetData = () => {
   const countQuery = `SELECT COUNT(*) as count FROM projects`;
   db.get(countQuery, [], (err, row) => {
     if (err) {
@@ -149,6 +169,84 @@ app.get('/projets/:id', (req, res) => {
       res.status(404).send('Projet non trouvé');
     } else {
       res.render('projectDetail', { title: project.name, project });
+    }
+  });
+});
+
+// Route pour afficher la page de connexion
+app.get('/login', (req, res) => {
+  res.render('login', { title: 'Login' });
+});
+
+// Fonction pour chiffrer le mot de passe avec SHA-512 et un sel
+function hashPassword(password, salt) {
+  const hash = crypto.createHmac('sha512', salt); // Utilise SHA-512 avec le sel
+  hash.update(password);
+  return hash.digest('hex');
+}
+
+// Génération d'un sel unique
+function generateSalt(length = 16) {
+  return crypto.randomBytes(length).toString('hex');
+}
+
+// Route pour le formulaire de connexion
+app.post('/login', (req, res) => {
+  const { username, password } = req.body;
+
+  // Validation des entrées
+  if (!username || !password) {
+    return res.status(400).send('Tous les champs sont requis');
+  }
+
+  db.get(`SELECT * FROM users WHERE username = ?`, [username], (err, row) => {
+    if (err) {
+      return res.status(500).send('Erreur du serveur');
+    }
+    if (row) {
+      // Utilisateur trouvé, vérification du mot de passe
+      const hashedPassword = hashPassword(password, row.salt);
+      if (hashedPassword === row.password) {
+        res.send('Connexion réussie');
+      } else {
+        res.status(401).send('Nom d\'utilisateur ou mot de passe incorrect');
+      }
+    } else {
+      // Si l'utilisateur n'existe pas, redirection vers la création de compte
+      res.redirect(`/register?username=${encodeURIComponent(username)}`);
+    }
+  });
+});
+
+// Route pour afficher le formulaire de création de compte
+app.get('/register', (req, res) => {
+  const { username } = req.query;
+  res.render('register', { title: 'Créer un compte', username });
+});
+
+// Route pour la création de compte
+app.post('/register', (req, res) => {
+  const { username, email, password } = req.body;
+
+  // Validation des entrées
+  if (!username || !email || !password) {
+    return res.status(400).send('Tous les champs sont requis');
+  }
+
+  const salt = generateSalt();
+  const hashedPassword = hashPassword(password, salt);
+
+  // Insertion de l'utilisateur dans la base de données
+  db.run(`INSERT INTO users (username, email, password, salt) VALUES (?, ?, ?, ?)`, [username, email, hashedPassword, salt], function(err) {
+    if (err) {
+      console.error('Erreur lors de l\'insertion :', err);
+      if (err.code === 'SQLITE_CONSTRAINT') {
+        res.status(409).send('Nom d\'utilisateur ou email déjà pris');
+      } else {
+        res.status(500).send('Erreur du serveur');
+      }
+    } else {
+      res.send('Compte créé avec succès');
     }
   });
 });
