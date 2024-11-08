@@ -1,0 +1,28 @@
+doctype html
+html(lang="fr")
+  head
+    meta(charset="UTF-8")
+    meta(name="viewport" content="width=device-width, initial-scale=1.0")
+    title= title + " - DIY able"
+    link(rel="stylesheet" href="/styles.css")
+  body
+    header
+      div.logo
+        img(src="/images/logo-diyable.jpeg" alt="DIY able logo")
+      nav
+        ul
+          li: a(href="/") Accueil
+          li: a(href="/projets") Projets
+          li: a(href="#about") À Propos
+          li: a(href="/contact") Contact
+    main
+      section.project-detail
+        h1= project.name
+        img(src=`/images/${project.image}` alt=`${project.name}`)
+        p Date de création: #{new Date(project.date).toLocaleDateString('fr-FR')}
+        p= project.description
+        p Catégorie: #{project.category}
+        a(href="/projets") Retour aux projets
+    footer
+      p © 2024 DIY able - Tous droits réservés
+    script(src="/script.js")
