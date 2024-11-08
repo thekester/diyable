@@ -273,7 +273,7 @@ nav ul li a:hover {
   text-align: left;
   font: bold 16px sans-serif;
   color: #333; /* Couleur du texte adaptée */
-  background-image: url("https://tenzotea.co/cdn/shop/files/ft_bg.png?v=1636552563");
+  background-image: url("/images/ft_bg.png");
   background-position: center top;
   padding-top: 200px;
   background-size: cover;
