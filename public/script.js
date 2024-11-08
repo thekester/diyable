@@ -14,16 +14,25 @@ document.addEventListener('DOMContentLoaded', function () {
         filterButtons.forEach(btn => btn.classList.remove('active'));
         this.classList.add('active');
 
-        // Vérifiez que les cartes existent également
-        if (projectCards && projectCards.length > 0) {
-          projectCards.forEach(card => {
-            if (category === 'all' || card.dataset.category === category) {
+        // Filtrage des cartes
+        projectCards.forEach(card => {
+          if (category === 'all') {
+            card.style.display = 'block';
+          } else if (category === 'autre') {
+            const cardCategory = card.dataset.category;
+            if (!cardCategory || ['autre', 'other'].includes(cardCategory.toLowerCase())) {
               card.style.display = 'block';
             } else {
               card.style.display = 'none';
             }
-          });
-        }
+          } else {
+            if (card.dataset.category === category.toLowerCase()) {
+              card.style.display = 'block';
+            } else {
+              card.style.display = 'none';
+            }
+          }
+        });
       });
     });
   } else {

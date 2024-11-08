@@ -21,15 +21,15 @@ html(lang="fr")
 
         //- Section des filtres
         div.filters
-          button.filter-button(data-category="all") Tous
-          button.filter-button(data-category="iot") IoT
-          button.filter-button(data-category="craft") Artisanat
+          button.filter-button(data-category="all" class="active") Tous
+          each category in categories
+            button.filter-button(data-category=category)= category.charAt(0).toUpperCase() + category.slice(1)
           button.filter-button(data-category="autre") Autre
 
         if projects.length
           div.project-grid
             each project in projects
-              .project-card(data-category=project.category)
+              .project-card(data-category=project.category ? project.category.toLowerCase() : 'autre')
                 img(src=`/images/${project.image}` alt=`${project.name}`)
                 h3= project.name
                 p= project.description

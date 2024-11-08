@@ -1,0 +1,24 @@
+//- views/layout.pug
+
+doctype html
+html(lang="fr")
+  head
+    meta(charset="UTF-8")
+    meta(name="viewport" content="width=device-width, initial-scale=1.0")
+    title #{title} - DIY able
+    link(rel="stylesheet" href="/styles.css")
+  body
+    header
+      .logo
+        img(src="/images/logo-diyable.jpeg" alt="DIY able logo")
+      nav
+        ul
+          li: a(href="/") Accueil
+          li: a(href="/projets") Projets
+          li: a(href="/about") À Propos
+          li: a(href="/contact") Contact
+    main
+      block content
+    footer
+      p © 2024 DIY able - Tous droits réservés
+    script(src="/script.js")
