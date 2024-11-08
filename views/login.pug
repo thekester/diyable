@@ -1,0 +1,35 @@
+doctype html
+html(lang="fr")
+  head
+    meta(charset="UTF-8")
+    meta(name="viewport" content="width=device-width, initial-scale=1.0")
+    title= title + " - DIY able"
+    link(rel="stylesheet" href="/styles.css")
+  body
+    header
+      div.logo
+        img(src="/images/logo-diyable.jpeg" alt="DIY able logo")
+      nav
+        ul
+          li: a(href="/") Accueil
+          li: a(href="/projets") Projets
+          li: a(href="#about") À Propos
+          li: a(href="/contact") Contact
+          li: a(href="/login") 
+              button(type="button") Connexion
+    main
+      form(id="loginForm" action="/login" method="post")
+        h1 Connexion
+        div
+          label(for="username") Nom d'utilisateur
+          input(type="text" id="username" name="username" required)
+        div
+          label(for="password") Mot de passe
+          input(type="password" id="password" name="password" required)
+        button(type="submit") Se connecter
+        div.form-footer
+          p Vous n'avez pas de compte ? 
+          a(href="/register") Créez un compte
+            br
+    footer
+      p © 2024 DIY able - Tous droits réservés
