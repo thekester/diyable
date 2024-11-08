@@ -44,3 +44,23 @@ document.addEventListener('DOMContentLoaded', function () {
     console.warn("Aucun bouton héro trouvé sur la page.");
   }
 });
+
+// Fonction pour basculer l'affichage du menu déroulant
+function toggleDropdown() {
+  const dropdownMenu = document.getElementById('dropdownMenu');
+  // Vérifiez si le menu est actuellement visible
+  if (dropdownMenu.style.display === 'flex') {
+    dropdownMenu.style.display = 'none'; // Cache le menu
+  } else {
+    dropdownMenu.style.display = 'flex'; // Affiche le menu
+  }
+}
+
+// Fermer le menu si l'utilisateur clique en dehors de celui-ci
+window.onclick = function(event) {
+  const dropdownMenu = document.getElementById('dropdownMenu');
+  const usernameDropdown = document.getElementById('usernameDropdown');
+  if (!usernameDropdown.contains(event.target) && !dropdownMenu.contains(event.target)) {
+    dropdownMenu.style.display = 'none'; // Cache le menu si on clique ailleurs
+  }
+}

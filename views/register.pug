@@ -18,19 +18,21 @@ html(lang="fr")
           li: a(href="/login") 
               button(type="button") Connexion
     main
-      section.register
-        h1 Créer un Compte
-        form(id="registerForm" action="/register" method="post")
-          div
-            label(for="username") Nom d'utilisateur
-            input(type="text" id="username" name="username" value=(username || '') required)
-          div
-            label(for="email") Adresse Email
-            input(type="email" id="email" name="email" required)
-          div
-            label(for="password") Mot de passe
-            input(type="password" id="password" name="password" required)
-          button(type="submit") Créer un Compte
-        br
+      form(id="registerForm" action="/register" method="post")
+        h1 Inscription
+        div
+          label(for="username") Nom d'utilisateur
+          input(type="text" id="username" name="username" required)
+        div
+          label(for="email") Adresse Email
+          input(type="email" id="email" name="email" required)
+        div
+          label(for="password") Mot de passe
+          input(type="password" id="password" name="password" required)
+        button(type="submit") Créer un Compte
+        div.form-footer
+          p Vous avez déjà un compte ? 
+          a(href="/login") Connectez-vous
+      br
     footer
       p © 2024 DIY able - Tous droits réservés

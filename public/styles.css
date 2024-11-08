@@ -30,7 +30,7 @@ nav ul {
   align-items: center;
 }
 
-nav ul li:last-child {
+#connexion {
     margin-left: 60px;
 }
 
@@ -241,6 +241,128 @@ nav button:hover {
 nav button.active {
   background-color: #0056b3;
   transform: translateY(-2px);
+}
+
+/* Styles pour les formulaires de connexion et d'enregistrement */
+form {
+  background: white;
+  padding: 20px;
+  margin: 20px auto;
+  max-width: 400px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+form h1 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+form div {
+  margin: 15px;
+
+}
+
+form label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+form input[type="text"],
+form input[type="email"],
+form input[type="password"] {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+form button[type="submit"] {
+  width: 100%;
+  padding: 12px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s, transform 0.2s;
+}
+
+form button[type="submit"]:hover {
+  background-color: #0056b3;
+  transform: translateY(-2px);
+}
+
+form .form-footer {
+  margin-top: 15px;
+  text-align: center;
+}
+
+form .form-footer a {
+  color: #007bff;
+  text-decoration: none;
+  transition: color 0.3s;
+}
+
+form .form-footer a:hover {
+  color: #0056b3;
+}
+
+/* Styles pour le menu déroulant */
+#dropdownMenu {
+  display: none; /* Le menu est caché par défaut */
+  position: absolute;
+  top: 82px; /* Ajustez la position du menu */
+  right: 0;
+  background-color: white;
+  border: 1px solid #ddd;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  padding: 10px 0;
+  list-style: none;
+  margin: 0;
+  border-radius: 5px;
+  flex-direction: column;
+  align-items: center;
+}
+
+#dropdownMenu li {
+  width: 80%;
+  text-align: center;
+  padding-right: 30px;
+}
+
+#dropdownMenu li a {
+  text-decoration: none;
+  color: #333;
+  display: block;
+  width: 100%;
+  padding: 10px 20px;
+}
+
+#dropdownMenu li a:hover {
+  background-color: #007bff;
+  color: white;
+}
+
+/* Styles pour le bouton du menu déroulant */
+#usernameDropdown {
+  cursor: pointer;
+  padding: 10px 20px;
+  font-size: 1rem;
+  background-color: #f8f8f8;
+  color: #333;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  transition: background-color 0.3s;
+}
+
+#usernameDropdown:hover {
+  background-color: #007bff;
+  color: white;
 }
 
 footer {

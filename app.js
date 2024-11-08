@@ -6,9 +6,18 @@ const sqlite3 = require('sqlite3').verbose(); // Import sqlite3
 const fs = require('fs');
 const crypto = require('crypto');
 const bodyParser = require('body-parser');
+const session = require('express-session');
+require('dotenv').config();
 
 // Middleware
 app.use(bodyParser.urlencoded({ extended: true }));
+
+app.use(session({
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: true,
+  cookie: { secure: false } // Mettez à true si vous utilisez HTTPS
+}));
 
 // Pour servir des fichiers statiques (comme le CSS, le JavaScript)
 app.use(express.static('public'));
@@ -132,7 +141,7 @@ app.get('/', (req, res) => {
       console.error('Erreur lors de la récupération des projets récents:', err.message);
       res.status(500).send('Erreur serveur');
     } else {
-      res.render('index', { title: 'Accueil', recentProjects: rows });
+      res.render('index', { title: 'Accueil', username: req.session.username, recentProjects: rows });
     }
   });
 });
@@ -190,7 +199,6 @@ function generateSalt(length = 16) {
   return crypto.randomBytes(length).toString('hex');
 }
 
-// Route pour le formulaire de connexion
 app.post('/login', (req, res) => {
   const { username, password } = req.body;
 
@@ -201,19 +209,19 @@ app.post('/login', (req, res) => {
 
   db.get(`SELECT * FROM users WHERE username = ?`, [username], (err, row) => {
     if (err) {
-      return res.status(500).send('Erreur du serveur');
-    }
-    if (row) {
+      res.status(500).send('Erreur du serveur');
+    } else if (row) {
       // Utilisateur trouvé, vérification du mot de passe
       const hashedPassword = hashPassword(password, row.salt);
       if (hashedPassword === row.password) {
-        res.send('Connexion réussie');
+        // Stocker l'utilisateur dans la session
+        req.session.username = username;
+        res.redirect('/');
       } else {
-        res.status(401).send('Nom d\'utilisateur ou mot de passe incorrect');
+        res.status(401).send('Mot de passe incorrect');
       }
     } else {
-      // Si l'utilisateur n'existe pas, redirection vers la création de compte
-      res.redirect(`/register?username=${encodeURIComponent(username)}`);
+      res.status(404).send('Utilisateur non trouvé');
     }
   });
 });
@@ -248,6 +256,15 @@ app.post('/register', (req, res) => {
     } else {
       res.send('Compte créé avec succès');
     }
+  });
+});
+
+app.get('/logout', (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      return res.status(500).send('Erreur lors de la déconnexion');
+    }
+    res.redirect('/'); // Rediriger vers la page d'accueil après déconnexion
   });
 });
 

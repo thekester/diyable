@@ -15,8 +15,15 @@ html(lang="fr")
           li: a(href="/projets") Projets
           li: a(href="#about") À Propos
           li: a(href="/contact") Contact
-          li: a(href="/login")
-              button(type="button") Connexion
+          if username
+            li
+              a(href="javascript:void(0)" id="usernameDropdown" onclick="toggleDropdown()") #{username} 
+              ul(id="dropdownMenu" class="dropdown-menu")
+                li: a(href="/profile") Mon Profil
+                li: a(href="/logout") Déconnexion
+          else
+            li: a(href="/login") 
+              button(type="button" id="connexion") Connexion
     main
       section.hero
         h1 Partagez et Découvrez des Projets DIY Inspirants !

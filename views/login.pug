@@ -18,16 +18,18 @@ html(lang="fr")
           li: a(href="/login") 
               button(type="button") Connexion
     main
-        section.login
-            h1 Connexion
-            form(id="loginForm" action="/login" method="post")
-                div
-                    label(for="username") Nom d'utilisateur
-                    input(type="text" id="username" name="username" required)
-                div
-                    label(for="password") Mot de passe
-                    input(type="password" id="password" name="password" required)
-                button(type="submit") Se connecter
+      form(id="loginForm" action="/login" method="post")
+        h1 Connexion
+        div
+          label(for="username") Nom d'utilisateur
+          input(type="text" id="username" name="username" required)
+        div
+          label(for="password") Mot de passe
+          input(type="password" id="password" name="password" required)
+        button(type="submit") Se connecter
+        div.form-footer
+          p Vous n'avez pas de compte ? 
+          a(href="/register") Créez un compte
             br
     footer
       p © 2024 DIY able - Tous droits réservés
