@@ -7,6 +7,8 @@ html(lang="fr")
     meta(name="viewport" content="width=device-width, initial-scale=1.0")
     title #{title} - DIY able
     link(rel="stylesheet" href="/styles.css")
+    //- Inclusion de FontAwesome pour les icônes
+    link(rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-pO0KlyN6k/nI9nCGl9yxE5O8ZxO3zNxkKX5+hz3gx0kKwx6n+QuV/1x4hWDeeJnK7qdzDzZkQY0UybNw9rDAAA==" crossorigin="anonymous" referrerpolicy="no-referrer" )
   body
     header
       .logo
@@ -19,6 +21,55 @@ html(lang="fr")
           li: a(href="/contact") Contact
     main
       block content
-    footer
-      p © 2024 DIY able - Tous droits réservés
+    footer.footer(role="contentinfo" itemscope itemtype="http://schema.org/Organization")
+      .footer-left(itemscope itemtype="http://schema.org/Organization")
+        img.u-logo.logo(src="/images/logo-diyable.jpeg" alt="Logo DIY able" itemprop="logo")
+        h3.p-name(itemprop="name") DIY able
+        p.p-description(itemprop="description") 
+          | DIY able est une plateforme dédiée à la communauté DIY (Do It Yourself) passionnée de bricolage et d'IoT. Nous partageons des projets inspirants, des tutoriels détaillés et des idées innovantes pour vous aider à transformer vos espaces de vie et à développer vos compétences techniques.
+        nav(aria-label="Footer Navigation")
+          p.footer-links
+            a.link-1(href="/") Accueil
+            a(href="/projets") Projets
+            a(href="/about") À Propos
+            a(href="/contact") Contact
+        p.footer-name © 2024 DIY able
+      .footer-center
+        .p-address(itemscope itemtype="http://schema.org/PostalAddress")
+          i.fa.fa-map-marker(aria-hidden="true")
+          p
+            | 
+            span.p-street-address 123 Rue du Bricolage,
+            | 
+            span.p-locality PassionVille,
+            | 
+            span.p-region Créativité,
+            | 
+            span.p-postal-code 67890
+        .contact-info
+          i.fa.fa-phone(aria-hidden="true")
+          p.p-tel +33 1 23 45 67 89
+        .contact-info
+          i.fa.fa-envelope(aria-hidden="true")
+          p
+            a.u-email(href="mailto:contact@diyable.com", itemprop="email") contact@diyable.com
+      .footer-right
+        p.footer-about
+          span À Propos
+          |  DIY able est votre source d'inspiration pour tous vos projets DIY. Rejoignez notre communauté et partagez vos créations !
+        .footer-socials
+          a.u-url(rel="me", href="https://linkedin.com/in/votre-profil", aria-label="LinkedIn", itemprop="sameAs")
+            i.fa-brands.fa-linkedin
+          a.u-url(rel="me", href="https://github.com/votre-profil", aria-label="GitHub", itemprop="sameAs")
+            i.fa-brands.fa-github
+          a.u-url(rel="me", href="https://twitter.com/votre-profil", aria-label="Twitter", itemprop="sameAs")
+            i.fa-brands.fa-twitter
+          a.u-url(rel="me", href="https://mastodon.social/@votre-profil", aria-label="Mastodon", itemprop="sameAs")
+            i.fa-brands.fa-mastodon
+          a.u-url(rel="me", href="https://threads.net/@votre-profil", aria-label="Threads", itemprop="sameAs")
+            i.fa-brands.fa-threads
+          a.u-url(rel="me", href="https://facebook.com/votre-profil", aria-label="Facebook", itemprop="sameAs")
+            i.fa-brands.fa-facebook
+          a.u-url(rel="me", href="https://instagram.com/votre-profil", aria-label="Instagram", itemprop="sameAs")
+            i.fa-brands.fa-instagram
     script(src="/script.js")
