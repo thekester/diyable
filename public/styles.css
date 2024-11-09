@@ -221,8 +221,17 @@ h3 .date {
 .filter-button:hover,
 .filter-button.active {
   background-color: #0056b3;
-  transform: translateY(-3px);
+  transform: scale(1.05);
 }
+
+#no-projects-message {
+  display: none; /* Initialement caché */
+  text-align: center;
+  font-size: 1.2em;
+  color: #666;
+  margin-top: 20px;
+}
+
 
 /* Grille de projets */
 .project-grid {

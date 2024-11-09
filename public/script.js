@@ -1,8 +1,11 @@
+// script.js
+
 // DOMContentLoaded pour s'assurer que le script s'exécute après le chargement de la page
 document.addEventListener('DOMContentLoaded', function () {
   // Sélection des boutons de filtre
   const filterButtons = document.querySelectorAll('.filter-button');
   const projectCards = document.querySelectorAll('.project-card');
+  const noProjectsMessage = document.getElementById('no-projects-message');
 
   // Vérifiez que les boutons existent avant de tenter d'accéder à leurs propriétés
   if (filterButtons && filterButtons.length > 0) {
@@ -14,15 +17,44 @@ document.addEventListener('DOMContentLoaded', function () {
         filterButtons.forEach(btn => btn.classList.remove('active'));
         this.classList.add('active');
 
+        // Compteur pour les projets visibles
+        let projectsVisible = 0;
+
         // Vérifiez que les cartes existent également
         if (projectCards && projectCards.length > 0) {
           projectCards.forEach(card => {
-            if (category === 'all' || card.dataset.category === category) {
+            const cardCategory = card.dataset.category ? card.dataset.category.toLowerCase() : '';
+
+            if (category === 'all') {
               card.style.display = 'block';
+              projectsVisible++;
+            } else if (category === 'autre') {
+              if (!cardCategory || ['autre', 'other'].includes(cardCategory)) {
+                card.style.display = 'block';
+                projectsVisible++;
+              } else {
+                card.style.display = 'none';
+              }
             } else {
-              card.style.display = 'none';
+              if (cardCategory === category.toLowerCase()) {
+                card.style.display = 'block';
+                projectsVisible++;
+              } else {
+                card.style.display = 'none';
+              }
             }
           });
+        }
+
+        // Afficher ou cacher le message 'Aucun projet disponible pour cette catégorie.'
+        if (projectsVisible === 0) {
+          if (noProjectsMessage) {
+            noProjectsMessage.style.display = 'block';
+          }
+        } else {
+          if (noProjectsMessage) {
+            noProjectsMessage.style.display = 'none';
+          }
         }
       });
     });
@@ -30,7 +62,7 @@ document.addEventListener('DOMContentLoaded', function () {
     console.warn("Aucun bouton de filtre trouvé sur la page.");
   }
 
-  // Exemple d'effet de clic sur le bouton
+  // Exemple d'effet de clic sur le bouton héro
   const heroButton = document.querySelector('.hero button');
   if (heroButton) {
     heroButton.addEventListener('click', function () {
@@ -43,30 +75,22 @@ document.addEventListener('DOMContentLoaded', function () {
   } else {
     console.warn("Aucun bouton héro trouvé sur la page.");
   }
-});
 
-// Fonction pour basculer l'affichage du menu déroulant
-function toggleDropdown() {
-  const dropdownMenu = document.getElementById('dropdownMenu');
-  // Vérifiez si le menu est actuellement visible
-  if (dropdownMenu.style.display === 'flex') {
-    dropdownMenu.style.display = 'none'; // Cache le menu
-  } else {
-    dropdownMenu.style.display = 'flex'; // Affiche le menu
-  }
-}
-
-// Fermer le menu si l'utilisateur clique en dehors de celui-ci
-window.onclick = function(event) {
-  const dropdownMenu = document.getElementById('dropdownMenu');
+  // Fonctionnalité du menu déroulant pour le nom d'utilisateur
   const usernameDropdown = document.getElementById('usernameDropdown');
-  if (!usernameDropdown.contains(event.target) && !dropdownMenu.contains(event.target)) {
-    dropdownMenu.style.display = 'none'; // Cache le menu si on clique ailleurs
+  if (usernameDropdown) {
+    usernameDropdown.addEventListener('click', toggleDropdown);
   }
-}
 
-// affihage des commentaire des projets
-document.addEventListener('DOMContentLoaded', () => {
+  // Fermer le menu si l'utilisateur clique en dehors de celui-ci
+  window.addEventListener('click', function(event) {
+    const dropdownMenu = document.getElementById('dropdownMenu');
+    if (dropdownMenu && usernameDropdown && !usernameDropdown.contains(event.target) && !dropdownMenu.contains(event.target)) {
+      dropdownMenu.style.display = 'none'; // Cache le menu si on clique ailleurs
+    }
+  });
+
+  // Affichage des commentaires des projets
   const commentForm = document.getElementById('commentForm');
   if (commentForm) {
     commentForm.addEventListener('submit', async function(event) {
@@ -77,16 +101,19 @@ document.addEventListener('DOMContentLoaded', () => {
         body: formData
       });
       if (response.ok) {
-        const newComments = await fetch(`/comments/${formData.get('projectId')}`).then(res => res.json());
+        // Supposons que le serveur renvoie la liste mise à jour des commentaires
+        const newComments = await response.json(); // Ajustez en fonction de la réponse du serveur
         const commentList = document.querySelector('.comment-list');
         commentList.innerHTML = ''; // Nettoie la liste des commentaires
         newComments.forEach(comment => {
           const commentDiv = document.createElement('div');
           commentDiv.classList.add('comment');
           commentDiv.innerHTML = `
-            <p><strong>${comment.username}</strong></p>
-            <p>${new Date(comment.date).toLocaleDateString('fr-FR')}</p>
-            <p>${comment.comment}</p>
+            <div class="comment-header">
+              <span class="comment-username">${comment.username}</span>
+              <span class="comment-date">${new Date(comment.date).toLocaleDateString('fr-FR')}</span>
+            </div>
+            <div class="comment-body">${comment.comment}</div>
           `;
           commentList.appendChild(commentDiv);
         });
@@ -98,6 +125,18 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
+// Fonction pour basculer l'affichage du menu déroulant
+function toggleDropdown() {
+  const dropdownMenu = document.getElementById('dropdownMenu');
+  // Vérifiez si le menu est actuellement visible
+  if (dropdownMenu.style.display === 'flex' || dropdownMenu.style.display === 'block') {
+    dropdownMenu.style.display = 'none'; // Cache le menu
+  } else {
+    dropdownMenu.style.display = 'flex'; // Affiche le menu
+  }
+}
+
+// Fonction pour gérer les réactions aux commentaires
 function reactToComment(commentId, reaction) {
   fetch('/comments/react', {
     method: 'POST',

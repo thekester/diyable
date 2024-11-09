@@ -24,19 +24,10 @@ block content
               p= project.description
               a(href=`/projets/${project.id}`)
                 button(type="button") Voir le Projet
-            //- Option 2: Sans conteneurs supplémentaires (désactiver l'une des deux options)
-            // img(src=`/images/${project.image}` alt=`${project.name}`)
-            // h3= project.name
-            // p= project.description
-            // a(href=`/projets/${project.id}`)
-            //   button(type="button") Voir le Projet
+
     else
       p Aucun projet récent disponible pour le moment.
 
 block scripts
-  script.
-    function toggleDropdown() {
-      var dropdown = document.getElementById('dropdownMenu');
-      dropdown.classList.toggle('show');
-    }
+  script(src="/script.js")
 
