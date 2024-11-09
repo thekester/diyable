@@ -189,14 +189,11 @@ app.get('/projets', (req, res) => {
   });
 });
 
-// Route pour le détail d'un projet
 app.get('/projets/:id', (req, res) => {
   const projectId = req.params.id;
-  
+
   // Requête pour récupérer les détails du projet
   const projectQuery = `SELECT * FROM projects WHERE id = ?`;
-
-  // Requête pour récupérer les commentaires liés à ce projet
   const commentsQuery = `SELECT * FROM comments WHERE projectId = ? ORDER BY date DESC`;
 
   db.get(projectQuery, [projectId], (err, project) => {
@@ -209,14 +206,27 @@ app.get('/projets/:id', (req, res) => {
       return res.status(404).send('Projet non trouvé');
     }
 
-    // Récupération des commentaires associés
     db.all(commentsQuery, [projectId], (err, comments) => {
       if (err) {
         console.error('Erreur lors de la récupération des commentaires:', err.message);
         return res.status(500).send('Erreur serveur');
       }
 
-      // Rendu de la vue avec les données du projet et les commentaires
+      // Conversion des réactions JSON en objets
+      comments.forEach(comment => {
+        if (comment.reactions) {
+          try {
+            comment.reactions = JSON.parse(comment.reactions);
+          } catch (e) {
+            console.error('Erreur lors de l\'analyse des réactions JSON:', e);
+            comment.reactions = {};
+          }
+        } else {
+          comment.reactions = {};
+        }
+      });
+
+      // Rendu de la vue
       res.render('projectDetail', { 
         title: project.name, 
         project, 
@@ -227,36 +237,39 @@ app.get('/projets/:id', (req, res) => {
   });
 });
 
+app.post('/react/:commentId', (req, res) => {
+  const { commentId } = req.params;
+  const { emoji } = req.body;
 
-app.post('/comments/react', (req, res) => {
-  const { commentId, reaction } = req.body;
-
-  // Validation des données reçues
-  if (!commentId || !reaction) {
-    return res.status(400).json({ success: false, message: 'Données invalides.' });
-  }
-
-  // Récupère le commentaire actuel et ses réactions
   db.get('SELECT reactions FROM comments WHERE id = ?', [commentId], (err, row) => {
-    if (err || !row) {
-      return res.status(500).json({ success: false, message: 'Erreur de récupération du commentaire.' });
+    if (err) {
+      console.error('Erreur lors de la récupération des réactions:', err);
+      return res.status(500).json({ success: false, message: 'Erreur serveur.' });
     }
 
-    let reactions = JSON.parse(row.reactions || '{}');
-
-    // Mise à jour de la réaction (incrémente la valeur existante ou initialise)
-    reactions[reaction] = (reactions[reaction] || 0) + 1;
-
-    // Mise à jour dans la base de données
-    db.run('UPDATE comments SET reactions = ? WHERE id = ?', [JSON.stringify(reactions), commentId], function(err) {
-      if (err) {
-        return res.status(500).json({ success: false, message: 'Erreur lors de la mise à jour des réactions.' });
+    let reactions = {};
+    if (row && row.reactions) {
+      try {
+        reactions = JSON.parse(row.reactions);
+      } catch (parseError) {
+        console.error('Erreur lors de l\'analyse des réactions JSON:', parseError);
       }
+    }
 
-      res.json({ success: true, updatedCount: reactions[reaction] });
+    // Incrémentation de la réaction
+    reactions[emoji] = (reactions[emoji] || 0) + 1;
+    const updatedReactions = JSON.stringify(reactions);
+
+    db.run('UPDATE comments SET reactions = ? WHERE id = ?', [updatedReactions, commentId], (updateErr) => {
+      if (updateErr) {
+        console.error('Erreur lors de la mise à jour des réactions:', updateErr);
+        return res.status(500).json({ success: false, message: 'Erreur lors de la mise à jour.' });
+      }
+      res.json({ success: true });
     });
   });
 });
+
 
 // Route pour afficher la page de connexion
 app.get('/login', (req, res) => {

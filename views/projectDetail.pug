@@ -51,14 +51,34 @@ html(lang="fr")
               .comment-body.comment-box
                 p= comment.comment
               .reactions
-                if comment.reactions && typeof comment.reactions === 'object'
-                  each value, key in comment.reactions
-                    button(type="button" class="reaction-button" data-id=comment.id data-reaction=key onclick=`reactToComment(${comment.id}, '${key}')`) #{key} #{value || 0}
-                else
-                  button(type="button" class="reaction-button" data-id=comment.id data-reaction="👍" onclick="reactToComment(${comment.id}, '👍')") 👍 0
-                  button(type="button" class="reaction-button" data-id=comment.id data-reaction="💩" onclick="reactToComment(${comment.id}, '💩')") 💩 0
-                  button(type="button" class="reaction-button" data-id=comment.id data-reaction="❤️" onclick="reactToComment(${comment.id}, '❤️')") ❤️ 0
-                  button(type="button" class="reaction-button" data-id=comment.id data-reaction="😂" onclick="reactToComment(${comment.id}, '😂')") 😂 0
+                button(
+                  type="button" 
+                  class="reaction-button" 
+                  data-comment-id=comment.id 
+                  data-emoji="👍" 
+                  onclick="reactToComment(event)"
+                ) 👍 #{comment.reactions && comment.reactions['👍'] ? comment.reactions['👍'] : 0}
+                button(
+                  type="button" 
+                  class="reaction-button" 
+                  data-comment-id=comment.id 
+                  data-emoji="💩" 
+                  onclick="reactToComment(event)"
+                ) 💩 #{comment.reactions && comment.reactions['💩'] ? comment.reactions['💩'] : 0}
+                button(
+                  type="button" 
+                  class="reaction-button" 
+                  data-comment-id=comment.id 
+                  data-emoji="❤️" 
+                  onclick="reactToComment(event)"
+                ) ❤️ #{comment.reactions && comment.reactions['❤️'] ? comment.reactions['❤️'] : 0}
+                button(
+                  type="button" 
+                  class="reaction-button" 
+                  data-comment-id=comment.id 
+                  data-emoji="😂" 
+                  onclick="reactToComment(event)"
+                ) 😂 #{comment.reactions && comment.reactions['😂'] ? comment.reactions['😂'] : 0}
         else
           p Aucun commentaire pour le moment.
     footer
