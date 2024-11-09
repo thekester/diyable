@@ -15,8 +15,15 @@ html(lang="fr")
           li: a(href="/projets") Projets
           li: a(href="#about") À Propos
           li: a(href="/contact") Contact
-          li: a(href="/login")
-              button(type="button") Connexion
+          if username
+            li
+              a(href="javascript:void(0)" id="usernameDropdown" onclick="toggleDropdown()") #{username} 
+              ul(id="dropdownMenu" class="dropdown-menu")
+                li: a(href="/profile") Mon Profil
+                li: a(href="/logout") Déconnexion
+          else
+            li: a(href="/login") 
+              button(type="button" id="connexion") Connexion
     main
       section.project-detail
         h1= project.name
@@ -25,6 +32,35 @@ html(lang="fr")
         p= project.description
         p Catégorie: #{project.category}
         a(href="/projets") Retour aux projets
+      section.comment
+        h2 Commentaires
+        if username
+          form(method="POST" action="/comments")
+            input(type="hidden" name="projectId" value=projectId)
+            textarea(name="comment" placeholder="Écrivez votre commentaire ici..." required)
+            button(type="submit") Publier
+        else
+          p Vous devez être connecté pour poster un commentaire.
+        .comment-list
+        if comments && comments.length > 0
+          each comment in comments
+            .comment
+              .comment-header
+                strong.comment-username #{comment.username}
+                span.comment-date #{comment.date}
+              .comment-body.comment-box
+                p= comment.comment
+              .reactions
+                if comment.reactions && typeof comment.reactions === 'object'
+                  each value, key in comment.reactions
+                    button(type="button" class="reaction-button" data-id=comment.id data-reaction=key onclick=`reactToComment(${comment.id}, '${key}')`) #{key} #{value || 0}
+                else
+                  button(type="button" class="reaction-button" data-id=comment.id data-reaction="👍" onclick="reactToComment(${comment.id}, '👍')") 👍 0
+                  button(type="button" class="reaction-button" data-id=comment.id data-reaction="💩" onclick="reactToComment(${comment.id}, '💩')") 💩 0
+                  button(type="button" class="reaction-button" data-id=comment.id data-reaction="❤️" onclick="reactToComment(${comment.id}, '❤️')") ❤️ 0
+                  button(type="button" class="reaction-button" data-id=comment.id data-reaction="😂" onclick="reactToComment(${comment.id}, '😂')") 😂 0
+        else
+          p Aucun commentaire pour le moment.
     footer
       p © 2024 DIY able - Tous droits réservés
     script(src="/script.js")

@@ -19,6 +19,11 @@ app.use(session({
   cookie: { secure: false } // Mettez à true si vous utilisez HTTPS
 }));
 
+app.use((req, res, next) => {
+  res.locals.username = req.session.username; // Ajoute `username` à `res.locals`
+  next();
+});
+
 // Pour servir des fichiers statiques (comme le CSS, le JavaScript)
 app.use(express.static('public'));
 app.use('/images', express.static(path.join(__dirname, 'assets', 'images'))); // Serve images
@@ -74,6 +79,17 @@ const db = new sqlite3.Database(dbPath, (err) => {
         salt TEXT
       )
     `;
+    const createTableCommentsQuery = `
+      CREATE TABLE IF NOT EXISTS comments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        projectId INTEGER NOT NULL,
+        username TEXT NOT NULL,
+        comment TEXT NOT NULL,
+        date TEXT NOT NULL,
+        reactions JSON DEFAULT '{}',
+        FOREIGN KEY (projectId) REFERENCES projects(id)
+      )
+    `;
 
     db.run(createTableProjetQuery, (err) => {
       if (err) {
@@ -89,6 +105,14 @@ const db = new sqlite3.Database(dbPath, (err) => {
         console.error('Erreur lors de la création de la table users:', err.message);
       } else {
         console.log('Table "users" créée ou déjà existante.');
+        // Vérifier et insérer des données initiales si nécessaire
+      }
+    });
+    db.run(createTableCommentsQuery, (err) => {
+      if (err) {
+        console.error('Erreur lors de la création de la table comments:', err.message);
+      } else {
+        console.log('Table "comments" créée ou déjà existante.');
         // Vérifier et insérer des données initiales si nécessaire
       }
     });
@@ -168,17 +192,69 @@ app.get('/projets', (req, res) => {
 // Route pour le détail d'un projet
 app.get('/projets/:id', (req, res) => {
   const projectId = req.params.id;
-  const query = `SELECT * FROM projects WHERE id = ?`;
+  
+  // Requête pour récupérer les détails du projet
+  const projectQuery = `SELECT * FROM projects WHERE id = ?`;
 
-  db.get(query, [projectId], (err, project) => {
+  // Requête pour récupérer les commentaires liés à ce projet
+  const commentsQuery = `SELECT * FROM comments WHERE projectId = ? ORDER BY date DESC`;
+
+  db.get(projectQuery, [projectId], (err, project) => {
     if (err) {
       console.error('Erreur lors de la récupération du projet:', err.message);
-      res.status(500).send('Erreur serveur');
-    } else if (!project) {
-      res.status(404).send('Projet non trouvé');
-    } else {
-      res.render('projectDetail', { title: project.name, project });
+      return res.status(500).send('Erreur serveur');
     }
+
+    if (!project) {
+      return res.status(404).send('Projet non trouvé');
+    }
+
+    // Récupération des commentaires associés
+    db.all(commentsQuery, [projectId], (err, comments) => {
+      if (err) {
+        console.error('Erreur lors de la récupération des commentaires:', err.message);
+        return res.status(500).send('Erreur serveur');
+      }
+
+      // Rendu de la vue avec les données du projet et les commentaires
+      res.render('projectDetail', { 
+        title: project.name, 
+        project, 
+        comments,
+        projectId
+      });
+    });
+  });
+});
+
+
+app.post('/comments/react', (req, res) => {
+  const { commentId, reaction } = req.body;
+
+  // Validation des données reçues
+  if (!commentId || !reaction) {
+    return res.status(400).json({ success: false, message: 'Données invalides.' });
+  }
+
+  // Récupère le commentaire actuel et ses réactions
+  db.get('SELECT reactions FROM comments WHERE id = ?', [commentId], (err, row) => {
+    if (err || !row) {
+      return res.status(500).json({ success: false, message: 'Erreur de récupération du commentaire.' });
+    }
+
+    let reactions = JSON.parse(row.reactions || '{}');
+
+    // Mise à jour de la réaction (incrémente la valeur existante ou initialise)
+    reactions[reaction] = (reactions[reaction] || 0) + 1;
+
+    // Mise à jour dans la base de données
+    db.run('UPDATE comments SET reactions = ? WHERE id = ?', [JSON.stringify(reactions), commentId], function(err) {
+      if (err) {
+        return res.status(500).json({ success: false, message: 'Erreur lors de la mise à jour des réactions.' });
+      }
+
+      res.json({ success: true, updatedCount: reactions[reaction] });
+    });
   });
 });
 
@@ -265,6 +341,49 @@ app.get('/logout', (req, res) => {
       return res.status(500).send('Erreur lors de la déconnexion');
     }
     res.redirect('/'); // Rediriger vers la page d'accueil après déconnexion
+  });
+});
+
+// Route pour soumettre un commentaire
+app.post('/comments', (req, res) => {
+  if (!req.session.username) {
+    return res.status(403).send('Vous devez être connecté pour commenter.');
+  }
+
+  const { comment, projectId } = req.body;
+  const username = req.session.username;
+  const date = new Date().toLocaleString('fr-FR', { timeZone: 'UTC' });
+
+  // Vérification que les données nécessaires sont présentes
+  if (!comment || !projectId) {
+    return res.status(400).send('Le commentaire et le projectId sont requis.');
+  }
+
+  // Insertion du commentaire dans la base de données
+  db.run(`INSERT INTO comments (projectId, username, comment, date) VALUES (?, ?, ?, ?)`, 
+    [projectId, username, comment, date], 
+    function(err) {
+      if (err) {
+        console.error('Erreur lors de l\'ajout du commentaire:', err.message); // Afficher l'erreur exacte
+        return res.status(500).send('Erreur lors de l\'ajout du commentaire.');
+      } else {
+        // Redirection vers la page du projet après l'ajout du commentaire
+        res.redirect(`/projets/${projectId}`);
+      }
+  });
+});
+
+// Route pour récupérer les commentaires d'un projet
+app.get('/comments/:projectId', (req, res) => {
+  const projectId = req.params.projectId;
+
+  // Récupération des commentaires liés à ce projet
+  db.all(`SELECT * FROM comments WHERE projectId = ? ORDER BY date DESC`, [projectId], (err, comments) => {
+    if (err) {
+      res.status(500).send('Erreur lors de la récupération des commentaires.');
+    } else {
+      res.json(comments);
+    }
   });
 });
 

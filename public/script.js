@@ -64,3 +64,62 @@ window.onclick = function(event) {
     dropdownMenu.style.display = 'none'; // Cache le menu si on clique ailleurs
   }
 }
+
+// affihage des commentaire des projets
+document.addEventListener('DOMContentLoaded', () => {
+  const commentForm = document.getElementById('commentForm');
+  if (commentForm) {
+    commentForm.addEventListener('submit', async function(event) {
+      event.preventDefault(); // Empêche la soumission classique du formulaire
+      const formData = new FormData(this);
+      const response = await fetch(this.action, {
+        method: 'POST',
+        body: formData
+      });
+      if (response.ok) {
+        const newComments = await fetch(`/comments/${formData.get('projectId')}`).then(res => res.json());
+        const commentList = document.querySelector('.comment-list');
+        commentList.innerHTML = ''; // Nettoie la liste des commentaires
+        newComments.forEach(comment => {
+          const commentDiv = document.createElement('div');
+          commentDiv.classList.add('comment');
+          commentDiv.innerHTML = `
+            <p><strong>${comment.username}</strong></p>
+            <p>${new Date(comment.date).toLocaleDateString('fr-FR')}</p>
+            <p>${comment.comment}</p>
+          `;
+          commentList.appendChild(commentDiv);
+        });
+        this.reset(); // Réinitialise le formulaire
+      } else {
+        alert('Erreur lors de l\'envoi du commentaire.');
+      }
+    });
+  }
+});
+
+function reactToComment(commentId, reaction) {
+  fetch('/comments/react', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ commentId, reaction })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      // Met à jour dynamiquement l'affichage des réactions
+      const button = document.querySelector(`.reaction-button[data-id="${commentId}"][data-reaction="${reaction}"]`);
+      if (button) {
+        // Met à jour le compteur de réactions
+        button.textContent = `${reaction} ${data.updatedCount}`;
+      }
+    } else {
+      alert('Erreur lors de la mise à jour de la réaction.');
+    }
+  })
+  .catch(error => {
+    console.error('Erreur de réaction:', error);
+  });
+}
