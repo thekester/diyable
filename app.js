@@ -88,8 +88,18 @@ const createTableCommentsQuery = `
     username TEXT NOT NULL,
     comment TEXT NOT NULL,
     date TEXT NOT NULL,
-    reactions JSON DEFAULT '{}',
     FOREIGN KEY (projectId) REFERENCES projects(id)
+  )
+`;
+const createTableCommentReactionsQuery = `
+  CREATE TABLE IF NOT EXISTS comment_reactions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    comment_id INTEGER NOT NULL,
+    username TEXT NOT NULL,
+    emoji TEXT NOT NULL,
+    date TEXT NOT NULL,
+    FOREIGN KEY (comment_id) REFERENCES comments(id),
+    UNIQUE (comment_id, username, emoji)
   )
 `;
 
@@ -125,6 +135,18 @@ const db = new sqlite3.Database(dbPath, (err) => {
           console.error('Erreur lors de la création de la table comments:', err.message);
         } else {
           console.log('Table "comments" créée ou déjà existante.');
+          // Après avoir créé la table comments, migrer les données si nécessaire
+          migrateCommentsTable();
+        }
+      });
+
+      db.run(createTableCommentReactionsQuery, (err) => {
+        if (err) {
+          console.error('Erreur lors de la création de la table comment_reactions:', err.message);
+        } else {
+          console.log('Table "comment_reactions" créée ou déjà existante.');
+          // Migrer les réactions existantes
+          migrateReactions();
         }
       });
     });
@@ -258,6 +280,124 @@ const insertInitialProjectsData = () => {
   });
 };
 
+// Fonction pour migrer la table comments si le champ reactions existe
+const migrateCommentsTable = () => {
+  // Vérifier si le champ reactions existe dans la table comments
+  db.get(`PRAGMA table_info(comments)`, (err, columns) => {
+    if (err) {
+      console.error('Erreur lors de la vérification des colonnes de la table comments:', err.message);
+      return;
+    }
+
+    db.all(`PRAGMA table_info(comments)`, (err, columns) => {
+      if (err) {
+        console.error('Erreur lors de la vérification des colonnes de la table comments:', err.message);
+        return;
+      }
+
+      const hasReactionsColumn = columns.some(column => column.name === 'reactions');
+
+      if (hasReactionsColumn) {
+        console.log('Le champ reactions existe dans la table comments. Début de la migration.');
+        // Renommer la table comments
+        db.run(`ALTER TABLE comments RENAME TO comments_old`, (err) => {
+          if (err) {
+            console.error('Erreur lors du renommage de la table comments:', err.message);
+            return;
+          }
+          console.log('Table comments renommée en comments_old.');
+
+          // Créer la nouvelle table sans le champ reactions
+          db.run(createTableCommentsQuery, (err) => {
+            if (err) {
+              console.error('Erreur lors de la création de la nouvelle table comments:', err.message);
+              return;
+            }
+            console.log('Nouvelle table comments créée.');
+
+            // Copier les données de l'ancienne table vers la nouvelle
+            const copyCommentsDataQuery = `
+              INSERT INTO comments (id, projectId, username, comment, date)
+              SELECT id, projectId, username, comment, date FROM comments_old
+            `;
+            db.run(copyCommentsDataQuery, (err) => {
+              if (err) {
+                console.error('Erreur lors de la copie des données des commentaires:', err.message);
+                return;
+              }
+              console.log('Données des commentaires copiées vers la nouvelle table.');
+
+              // Supprimer l'ancienne table comments_old
+              db.run(`DROP TABLE comments_old`, (err) => {
+                if (err) {
+                  console.error('Erreur lors de la suppression de la table comments_old:', err.message);
+                  return;
+                }
+                console.log('Table comments_old supprimée.');
+              });
+            });
+          });
+        });
+      } else {
+        console.log('Le champ reactions n\'existe pas dans la table comments. Aucune migration nécessaire.');
+      }
+    });
+  });
+};
+
+// Fonction pour migrer les réactions existantes vers la nouvelle table
+const migrateReactions = () => {
+  // Vérifier si des réactions existent dans les commentaires
+  db.all(`SELECT id, reactions FROM comments WHERE reactions IS NOT NULL AND reactions != '{}'`, (err, rows) => {
+    if (err) {
+      console.error('Erreur lors de la récupération des réactions à migrer:', err.message);
+      return;
+    }
+
+    if (rows.length === 0) {
+      console.log('Aucune réaction à migrer.');
+      return;
+    }
+
+    console.log(`Migration de ${rows.length} commentaires avec des réactions.`);
+
+    const insertReactionStmt = db.prepare(`
+      INSERT OR IGNORE INTO comment_reactions (comment_id, username, emoji, date)
+      VALUES (?, 'anonymous', ?, ?)
+    `);
+
+    rows.forEach(row => {
+      let reactions = {};
+      try {
+        reactions = JSON.parse(row.reactions);
+      } catch (e) {
+        console.error(`Erreur lors de l'analyse des réactions JSON pour le commentaire ID ${row.id}:`, e);
+        return;
+      }
+
+      const date = new Date().toISOString();
+
+      for (const [emoji, count] of Object.entries(reactions)) {
+        for (let i = 0; i < count; i++) {
+          insertReactionStmt.run(row.id, emoji, date, (err) => {
+            if (err) {
+              console.error('Erreur lors de l\'insertion de la réaction migrée:', err.message);
+            }
+          });
+        }
+      }
+    });
+
+    insertReactionStmt.finalize((err) => {
+      if (err) {
+        console.error('Erreur lors de la finalisation de l\'insertion des réactions migrées:', err.message);
+      } else {
+        console.log('Migration des réactions terminée.');
+      }
+    });
+  });
+};
+
 // Fonction pour chiffrer le mot de passe avec SHA-512 et un sel
 function hashPassword(password, salt) {
   const hash = crypto.createHmac('sha512', salt); // Utilise SHA-512 avec le sel
@@ -363,13 +503,54 @@ app.get('/projets/:id', (req, res) => {
         return res.status(500).send('Erreur serveur');
       }
 
-      // Rendu de la vue avec les données du projet et les commentaires
-      res.render('projectDetail', {
-        title: project.name,
-        project,
-        comments,
-        projectId,
-        username: req.session.username,
+      if (comments.length === 0) {
+        // Rendu de la vue sans commentaires
+        return res.render('projectDetail', {
+          title: project.name,
+          project,
+          comments: [],
+          projectId,
+          username: req.session.username,
+        });
+      }
+
+      const commentIds = comments.map(comment => comment.id);
+
+      // Récupération des réactions pour ces commentaires
+      const reactionsQuery = `
+        SELECT comment_id, emoji, COUNT(*) AS count
+        FROM comment_reactions
+        WHERE comment_id IN (${commentIds.map(() => '?').join(',')})
+        GROUP BY comment_id, emoji
+      `;
+
+      db.all(reactionsQuery, commentIds, (err, reactions) => {
+        if (err) {
+          console.error('Erreur lors de la récupération des réactions:', err.message);
+          return res.status(500).send('Erreur serveur');
+        }
+
+        // Associer les réactions aux commentaires
+        const reactionsMap = {};
+        reactions.forEach(reaction => {
+          if (!reactionsMap[reaction.comment_id]) {
+            reactionsMap[reaction.comment_id] = {};
+          }
+          reactionsMap[reaction.comment_id][reaction.emoji] = reaction.count;
+        });
+
+        comments.forEach(comment => {
+          comment.reactions = reactionsMap[comment.id] || {};
+        });
+
+        // Rendu de la vue avec les données du projet et les commentaires
+        res.render('projectDetail', {
+          title: project.name,
+          project,
+          comments,
+          projectId,
+          username: req.session.username,
+        });
       });
     });
   });
@@ -463,7 +644,7 @@ app.post('/comments', (req, res) => {
 
   const { comment, projectId } = req.body;
   const username = req.session.username;
-  const date = new Date().toLocaleString('fr-FR', { timeZone: 'UTC' });
+  const date = new Date().toISOString();
 
   // Vérification que les données nécessaires sont présentes
   if (!comment || !projectId) {
@@ -487,37 +668,99 @@ app.post('/comments', (req, res) => {
 });
 
 // Route pour gérer les réactions aux commentaires
-app.post('/comments/react', (req, res) => {
-  const { commentId, reaction } = req.body;
+app.post('/react/:commentId', (req, res) => {
+  if (!req.session.username) {
+    return res.status(403).json({ success: false, message: 'Vous devez être connecté pour réagir.' });
+  }
+
+  const { commentId } = req.params;
+  const { emoji } = req.body;
+  const username = req.session.username;
+  const date = new Date().toISOString();
 
   // Validation des données reçues
-  if (!commentId || !reaction) {
+  if (!commentId || !emoji) {
     return res.status(400).json({ success: false, message: 'Données invalides.' });
   }
 
-  // Récupère le commentaire actuel et ses réactions
-  db.get('SELECT reactions FROM comments WHERE id = ?', [commentId], (err, row) => {
-    if (err || !row) {
-      return res.status(500).json({ success: false, message: 'Erreur de récupération du commentaire.' });
+  // Vérifier si la réaction existe déjà pour cet utilisateur
+  const insertReactionQuery = `
+    INSERT INTO comment_reactions (comment_id, username, emoji, date)
+    VALUES (?, ?, ?, ?)
+    ON CONFLICT(comment_id, username, emoji) DO DELETE
+  `;
+
+  db.run(insertReactionQuery, [commentId, username, emoji, date], function (err) {
+    if (err) {
+      console.error('Erreur lors de la mise à jour de la réaction:', err);
+      return res.status(500).json({ success: false, message: 'Erreur lors de la mise à jour de la réaction.' });
+    } else {
+      // Compter le nombre total de réactions pour cet emoji sur le commentaire
+      const countReactionsQuery = `
+        SELECT COUNT(*) AS count
+        FROM comment_reactions
+        WHERE comment_id = ? AND emoji = ?
+      `;
+      db.get(countReactionsQuery, [commentId, emoji], (err, row) => {
+        if (err) {
+          console.error('Erreur lors du comptage des réactions:', err);
+          return res.status(500).json({ success: false, message: 'Erreur lors du comptage des réactions.' });
+        } else {
+          res.json({ success: true, updatedCount: row.count });
+        }
+      });
+    }
+  });
+});
+
+// Route pour récupérer les commentaires d'un projet (pour mise à jour asynchrone)
+app.get('/comments/:projectId', (req, res) => {
+  const projectId = req.params.projectId;
+
+  // Requête pour récupérer les commentaires liés à ce projet
+  const commentsQuery = `SELECT * FROM comments WHERE projectId = ? ORDER BY date DESC`;
+
+  db.all(commentsQuery, [projectId], (err, comments) => {
+    if (err) {
+      console.error('Erreur lors de la récupération des commentaires:', err.message);
+      return res.status(500).send('Erreur serveur');
     }
 
-    let reactions = JSON.parse(row.reactions || '{}');
+    if (comments.length === 0) {
+      return res.json([]);
+    }
 
-    // Mise à jour de la réaction (incrémente la valeur existante ou initialise)
-    reactions[reaction] = (reactions[reaction] || 0) + 1;
+    const commentIds = comments.map(comment => comment.id);
 
-    // Mise à jour dans la base de données
-    db.run(
-      'UPDATE comments SET reactions = ? WHERE id = ?',
-      [JSON.stringify(reactions), commentId],
-      function (err) {
-        if (err) {
-          return res.status(500).json({ success: false, message: 'Erreur lors de la mise à jour des réactions.' });
-        }
+    // Récupération des réactions pour ces commentaires
+    const reactionsQuery = `
+      SELECT comment_id, emoji, COUNT(*) AS count
+      FROM comment_reactions
+      WHERE comment_id IN (${commentIds.map(() => '?').join(',')})
+      GROUP BY comment_id, emoji
+    `;
 
-        res.json({ success: true, updatedCount: reactions[reaction] });
+    db.all(reactionsQuery, commentIds, (err, reactions) => {
+      if (err) {
+        console.error('Erreur lors de la récupération des réactions:', err.message);
+        return res.status(500).send('Erreur serveur');
       }
-    );
+
+      // Associer les réactions aux commentaires
+      const reactionsMap = {};
+      reactions.forEach(reaction => {
+        if (!reactionsMap[reaction.comment_id]) {
+          reactionsMap[reaction.comment_id] = {};
+        }
+        reactionsMap[reaction.comment_id][reaction.emoji] = reaction.count;
+      });
+
+      comments.forEach(comment => {
+        comment.reactions = reactionsMap[comment.id] || {};
+      });
+
+      res.json(comments);
+    });
   });
 });
 

@@ -90,7 +90,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 
-  // Affichage des commentaires des projets
+  // Gestion de l'affichage des commentaires des projets
   const commentForm = document.getElementById('commentForm');
   if (commentForm) {
     commentForm.addEventListener('submit', async function(event) {
@@ -101,8 +101,8 @@ document.addEventListener('DOMContentLoaded', function () {
         body: formData
       });
       if (response.ok) {
-        // Supposons que le serveur renvoie la liste mise à jour des commentaires
-        const newComments = await response.json(); // Ajustez en fonction de la réponse du serveur
+        const projectId = formData.get('projectId');
+        const newComments = await fetch(`/comments/${projectId}`).then(res => res.json());
         const commentList = document.querySelector('.comment-list');
         commentList.innerHTML = ''; // Nettoie la liste des commentaires
         newComments.forEach(comment => {
@@ -110,10 +110,15 @@ document.addEventListener('DOMContentLoaded', function () {
           commentDiv.classList.add('comment');
           commentDiv.innerHTML = `
             <div class="comment-header">
-              <span class="comment-username">${comment.username}</span>
+              <strong class="comment-username">${comment.username}</strong>
               <span class="comment-date">${new Date(comment.date).toLocaleDateString('fr-FR')}</span>
             </div>
-            <div class="comment-body">${comment.comment}</div>
+            <div class="comment-body comment-box">
+              <p>${comment.comment}</p>
+            </div>
+            <div class="reactions">
+              ${renderReactions(comment)}
+            </div>
           `;
           commentList.appendChild(commentDiv);
         });
@@ -137,28 +142,52 @@ function toggleDropdown() {
 }
 
 // Fonction pour gérer les réactions aux commentaires
-function reactToComment(commentId, reaction) {
-  fetch('/comments/react', {
+function reactToComment(event) {
+  event.preventDefault();
+  const button = event.target;
+  const commentId = button.getAttribute('data-comment-id');
+  const emoji = button.getAttribute('data-emoji');
+
+  fetch(`/react/${commentId}`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ commentId, reaction })
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ emoji })
   })
   .then(response => response.json())
   .then(data => {
     if (data.success) {
-      // Met à jour dynamiquement l'affichage des réactions
-      const button = document.querySelector(`.reaction-button[data-id="${commentId}"][data-reaction="${reaction}"]`);
-      if (button) {
-        // Met à jour le compteur de réactions
-        button.textContent = `${reaction} ${data.updatedCount}`;
+      // Mettre à jour le compteur de réactions sans recharger la page
+      const count = data.updatedCount;
+      button.querySelector('.reaction-count').textContent = count;
+
+      // Optionnel : gérer l'état actif du bouton si vous souhaitez indiquer que l'utilisateur a réagi
+      if (data.userHasReacted) {
+        button.classList.add('reacted');
+      } else {
+        button.classList.remove('reacted');
       }
     } else {
-      alert('Erreur lors de la mise à jour de la réaction.');
+      console.error('Erreur lors de la mise à jour de la réaction.');
     }
   })
   .catch(error => {
-    console.error('Erreur de réaction:', error);
+    console.error('Erreur réseau:', error);
   });
+}
+
+// Fonction pour rendre les boutons de réaction
+function renderReactions(comment) {
+  const reactions = ['👍', '💩', '❤️', '😂'];
+  let html = '';
+  reactions.forEach(emoji => {
+    const count = comment.reactions && comment.reactions[emoji] ? comment.reactions[emoji] : 0;
+    html += `<button
+      type="button"
+      class="reaction-button"
+      data-comment-id="${comment.id}"
+      data-emoji="${emoji}"
+      onclick="reactToComment(event)"
+    >${emoji} <span class="reaction-count">${count}</span></button> `;
+  });
+  return html;
 }
