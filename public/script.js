@@ -98,32 +98,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// function reactToComment(event) {
-//   const commentId = event.target.getAttribute('data-comment-id');
-//   const emoji = event.target.getAttribute('data-emoji');
-
-//   fetch(`/react/${commentId}`, {
-//     method: 'POST',
-//     headers: { 'Content-Type': 'application/json' },
-//     body: JSON.stringify({ emoji })
-//   })
-//   .then(response => response.json())
-//   .then(data => {
-//     if (data.success) {
-//       // Mettez à jour le compteur de réaction sans recharger la page (optionnel)
-//       const countElement = event.target.querySelector('span');
-//       if (countElement) {
-//         countElement.textContent = parseInt(countElement.textContent) + 1;
-//       }
-//     } else {
-//       console.error('Erreur lors de la mise à jour de la réaction.');
-//     }
-//   })
-//   .catch(error => {
-//     console.error('Erreur réseau:', error);
-//   });
-// }
-
 function reactToComment(event) {
   const commentId = event.target.getAttribute('data-comment-id');
   const emoji = event.target.getAttribute('data-emoji');
