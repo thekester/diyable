@@ -1,45 +1,23 @@
-doctype html
-html(lang="fr")
-  head
-    meta(charset="UTF-8")
-    meta(name="viewport" content="width=device-width, initial-scale=1.0")
-    title= title + " - DIY able"
-    link(rel="stylesheet" href="/styles.css")
-  body
-    header
-      div.logo
-        img(src="/images/logo-diyable.jpeg" alt="DIY able logo")
-      nav
-        ul
-          li: a(href="/") Accueil
-          li: a(href="/projets") Projets
-          li: a(href="#about") À Propos
-          li: a(href="/contact") Contact
-          if username
-            li
-              a(href="javascript:void(0)" id="usernameDropdown" onclick="toggleDropdown()") #{username} 
-              ul(id="dropdownMenu" class="dropdown-menu")
-                li: a(href="/profile") Mon Profil
-                li: a(href="/logout") Déconnexion
-          else
-            li: a(href="/login") 
-              button(type="button" id="connexion") Connexion
-    main
-      form(id="registerForm" action="/register" method="post")
-        h1 Inscription
-        div
-          label(for="username") Nom d'utilisateur
-          input(type="text" id="username" name="username" required)
-        div
-          label(for="email") Adresse Email
-          input(type="email" id="email" name="email" required)
-        div
-          label(for="password") Mot de passe
-          input(type="password" id="password" name="password" required)
-        button(type="submit") Créer un Compte
-        div.form-footer
-          p Vous avez déjà un compte ? 
-          a(href="/login") Connectez-vous
-      br
-    footer
-      p © 2024 DIY able - Tous droits réservés
+//- register.pug
+
+extends layout
+
+block content
+  form#registerForm(action="/register" method="post")
+    h1 Inscription
+    div
+      label(for="username") Nom d'utilisateur
+      input(type="text" id="username" name="username" required)
+    div
+      label(for="email") Adresse Email
+      input(type="email" id="email" name="email" required)
+    div
+      label(for="password") Mot de passe
+      input(type="password" id="password" name="password" required)
+    button(type="submit") Créer un Compte
+    div.form-footer
+      p Vous avez déjà un compte ?
+        a(href="/login") Connectez-vous
+
+block scripts
+  script(src="/script.js")
