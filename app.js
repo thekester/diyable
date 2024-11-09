@@ -476,14 +476,11 @@ app.get('/projets', (req, res) => {
   });
 });
 
-// Route pour le détail d'un projet
 app.get('/projets/:id', (req, res) => {
   const projectId = req.params.id;
 
   // Requête pour récupérer les détails du projet
   const projectQuery = `SELECT * FROM projects WHERE id = ?`;
-
-  // Requête pour récupérer les commentaires liés à ce projet
   const commentsQuery = `SELECT * FROM comments WHERE projectId = ? ORDER BY date DESC`;
 
   db.get(projectQuery, [projectId], (err, project) => {
@@ -496,7 +493,6 @@ app.get('/projets/:id', (req, res) => {
       return res.status(404).send('Projet non trouvé');
     }
 
-    // Récupération des commentaires associés
     db.all(commentsQuery, [projectId], (err, comments) => {
       if (err) {
         console.error('Erreur lors de la récupération des commentaires:', err.message);
@@ -513,6 +509,7 @@ app.get('/projets/:id', (req, res) => {
           username: req.session.username,
         });
       }
+    }
 
       const commentIds = comments.map(comment => comment.id);
 
@@ -555,6 +552,7 @@ app.get('/projets/:id', (req, res) => {
     });
   });
 });
+
 
 // Route pour afficher la page de connexion
 app.get('/login', (req, res) => {
