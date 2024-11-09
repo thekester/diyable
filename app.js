@@ -80,15 +80,16 @@ const checkAndInsertInitialData = () => {
 
   // Démarrer une séquence d'opérations
   db.serialize(() => {
-    // 1. Création de la table avec contrainte UNIQUE sur 'name'
+    // 1. Création de la table avec contrainte UNIQUE sur la combinaison de 'name', 'date' et 'image'
     const createTableQuery = `
       CREATE TABLE IF NOT EXISTS projects (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         date TEXT NOT NULL,
-        name TEXT NOT NULL UNIQUE,
+        name TEXT NOT NULL,
         description TEXT,
         category TEXT,
-        image TEXT
+        image TEXT,
+        UNIQUE(name, date, image)
       )
     `;
 
@@ -100,13 +101,13 @@ const checkAndInsertInitialData = () => {
       console.log('Table "projects" vérifiée ou créée avec succès.');
     });
 
-    // 2. Suppression des doublons existants
+    // 2. Suppression des doublons existants basés sur la combinaison de 'name', 'date' et 'image'
     const deleteDuplicatesQuery = `
       DELETE FROM projects
-      WHERE id NOT IN (
-        SELECT MIN(id)
+      WHERE rowid NOT IN (
+        SELECT MIN(rowid)
         FROM projects
-        GROUP BY name
+        GROUP BY name, date, image
       )
     `;
 
@@ -118,13 +119,13 @@ const checkAndInsertInitialData = () => {
       console.log(`Doublons supprimés. ${this.changes} enregistrements affectés.`);
     });
 
-    // 3. Insertion des données initiales
+    // 3. Insertion ou mise à jour des données initiales
     const insertQuery = `
-      INSERT OR IGNORE INTO projects (date, name, description, category, image)
+      INSERT INTO projects (date, name, description, category, image)
       VALUES
         ('2024-11-07', 'Projet IoT Innovant', 'Découvrez comment ce projet IoT peut transformer votre quotidien.', 'tech', 'projet-iot-exemple.jpg'),
         ('2024-11-06', 'Atelier de Bricolage', 'Un projet de bricolage pour embellir votre espace de vie.', 'craft', 'atelier-bricolage.jpg'),
-        ('2024-11-03', 'Création d''un Jardin Vertical', 'Fabriquez un jardin vertical pour votre balcon ou intérieur.', 'garden', 'jardin-vertical.jpg'),
+        ('2024-11-03', 'Création d\'un Jardin Vertical', 'Fabriquez un jardin vertical pour votre balcon ou intérieur.', 'garden', 'jardin-vertical.jpg'),
         ('2024-11-01', 'Fabriquer sa Propre Table en Bois', 'Construisez une table en bois personnalisée pour votre maison.', 'woodwork', 'table-bois.jpg'),
         ('2024-10-29', 'Réaliser des Bougies Maison', 'Apprenez à créer des bougies naturelles avec vos propres parfums.', 'craft', 'bougies-maison.jpg'),
         ('2024-10-26', 'Robot Suiveur de Ligne', 'Assemblez un petit robot qui suit une ligne tracée au sol.', 'tech', 'robot-ligne.jpg'),
@@ -137,26 +138,25 @@ const checkAndInsertInitialData = () => {
         ('2024-09-28', 'Horloge Murale en Vinyle', 'Recyclez de vieux disques vinyles en horloges murales.', 'recycle', 'horloge-vinyle.jpg'),
         ('2024-09-25', 'Fabriquer du Savon Naturel', 'Créez vos propres savons avec des ingrédients naturels.', 'craft', 'savon-naturel.jpg'),
         ('2024-09-21', 'Station Météo Connectée', 'Construisez une station météo avec un microcontrôleur.', 'tech', 'station-meteo.jpg'),
-        ('2024-09-17', 'Décoration en Macramé', 'Apprenez l''art du macramé pour décorer votre intérieur.', 'craft', 'macrame.jpg'),
+        ('2024-09-17', 'Décoration en Macramé', 'Apprenez l\'art du macramé pour décorer votre intérieur.', 'craft', 'macrame.jpg'),
         ('2024-09-14', 'Composteur de Jardin', 'Fabriquez un composteur pour recycler vos déchets organiques.', 'garden', 'composteur.jpg'),
         ('2024-09-11', 'Cadre Photo en Bois Recyclé', 'Créez des cadres photo uniques avec du bois récupéré.', 'recycle', 'cadre-photo.jpg'),
         ('2024-09-08', 'Coussins Personnalisés', 'Cousez des coussins avec des motifs et tissus de votre choix.', 'craft', 'coussins.jpg'),
-        ('2024-09-03', 'Système d''Arrosage Automatique', 'Installez un système pour arroser vos plantes automatiquement.', 'tech', 'arrosage-automatique.jpg')
+        ('2024-09-03', 'Système d\'Arrosage Automatique', 'Installez un système pour arroser vos plantes automatiquement.', 'tech', 'arrosage-automatique.jpg')
+      ON CONFLICT(name, date, image) DO UPDATE SET
+        description=excluded.description,
+        category=excluded.category
     `;
 
     db.run(insertQuery, function(err) {
       if (err) {
-        console.error('Erreur lors de l\'insertion des projets initiaux:', err.message);
+        console.error('Erreur lors de l\'insertion ou la mise à jour des projets initiaux:', err.message);
       } else {
-        console.log(`Tentative d'insertion des projets initiaux terminée. ${this.changes} lignes insérées.`);
+        console.log(`Insertion ou mise à jour des projets terminée. ${this.changes} lignes affectées.`);
       }
     });
   });
 };
-
-
-
-
 
 // Route principale
 app.get('/', (req, res) => {

@@ -16,10 +16,12 @@ block content
       .project-grid
         each project in recentProjects
           .project-card(data-category=project.category)
-            img(src=`/images/${project.image}` alt=`${project.name}`)
-            h3= project.name
-            p= project.description
-            a(href=`/projets/${project.id}`)
-              button(type="button") Voir le Projet
+            .project-image-container
+              img(src=`/images/${project.image}` alt=`${project.name}`)
+            .project-info
+              h3= project.name
+              p= project.description
+              a(href=`/projets/${project.id}`)
+                button(type="button") Voir le Projet
     else
       p Aucun projet récent disponible pour le moment.
