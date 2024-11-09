@@ -1,24 +1,11 @@
-doctype html
-html(lang="fr")
-  head
-    meta(charset="UTF-8")
-    meta(name="viewport" content="width=device-width, initial-scale=1.0")
-    title= title + " - DIY able"
-    link(rel="stylesheet" href="/styles.css")
-  body
-    header
-      div.logo
-        img(src="/images/logo-diyable.jpeg" alt="DIY able logo")
-      nav
-        ul
-          li: a(href="/") Accueil
-          li: a(href="/projets") Projets
-          li: a(href="#about") À Propos
-          li: a(href="/contact") Contact
-    main
-      section#contact
-        h1 Contactez-Nous
-        p Vous avez des questions ou des suggestions ? N'hésitez pas à nous contacter !
-    footer
-      p © 2024 DIY able - Tous droits réservés
-    script(src="/script.js")
+//- contact.pug
+
+extends layout
+
+block content
+  section#contact
+    h1 Contactez-Nous
+    p Vous avez des questions ou des suggestions ? N'hésitez pas à nous contacter !
+
+block scripts
+  script(src="/script.js")

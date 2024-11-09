@@ -1,0 +1,23 @@
+//- register.pug
+
+extends layout
+
+block content
+  form#registerForm(action="/register" method="post")
+    h1 Inscription
+    div
+      label(for="username") Nom d'utilisateur
+      input(type="text" id="username" name="username" required)
+    div
+      label(for="email") Adresse Email
+      input(type="email" id="email" name="email" required)
+    div
+      label(for="password") Mot de passe
+      input(type="password" id="password" name="password" required)
+    button(type="submit") Créer un Compte
+    div.form-footer
+      p Vous avez déjà un compte ?
+        a(href="/login") Connectez-vous
+
+block scripts
+  script(src="/script.js")

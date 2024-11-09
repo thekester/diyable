@@ -1,43 +1,33 @@
-//- views/index.pug
+//- index.pug
 
-doctype html
-html(lang="fr")
-  head
-    meta(charset="UTF-8")
-    meta(name="viewport" content="width=device-width, initial-scale=1.0")
-    title= title + " - DIY able"
-    link(rel="stylesheet" href="/styles.css")
-  body
-    header
-      div.logo
-        img(src="/images/logo-diyable.jpeg" alt="DIY able logo")
-      nav
-        ul
-          li: a(href="/") Accueil
-          li: a(href="/projets") Projets
-          li: a(href="#about") À Propos
-          li: a(href="/contact") Contact
-    main
-      section.hero
-        h1 Partagez et Découvrez des Projets DIY Inspirants !
-        p Rejoignez notre communauté passionnée de bricolage et d'IoT.
-        a(href="#projets")
-          button(type="button") Découvrir les Projets
-      section#projets
-        h2 Projets Récents
+extends layout
 
-        //- Affichage des projets récents
-        if recentProjects && recentProjects.length > 0
-          div.project-grid
-            each project in recentProjects
-              .project-card(data-category=project.category)
-                img(src=`/images/${project.image}` alt=`${project.name}`)
-                h3= project.name
-                p= project.description
-                a(href=`/projets/${project.id}`)
-                  button(type="button") Voir le Projet
-        else
-          p Aucun projet récent disponible pour le moment.
-    footer
-      p © 2024 DIY able - Tous droits réservés
-    script(src="/script.js")
+block content
+  section.hero
+    h1 Partagez et Découvrez des Projets DIY Inspirants !
+    p Rejoignez notre communauté passionnée de bricolage et d'IoT.
+    a(href="#projets")
+      button(type="button") Découvrir les Projets
+  section#projets
+    h2 Projets Récents
+
+    //- Affichage des projets récents
+    if recentProjects && recentProjects.length > 0
+      .project-grid
+        each project in recentProjects
+          .project-card(data-category=project.category)
+            //- Option 1: Avec conteneurs pour l'image et les infos
+            .project-image-container
+              img(src=`/images/${project.image}` alt=`${project.name}`)
+            .project-info
+              h3= project.name
+              p= project.description
+              a(href=`/projets/${project.id}`)
+                button(type="button") Voir le Projet
+
+    else
+      p Aucun projet récent disponible pour le moment.
+
+block scripts
+  script(src="/script.js")
+

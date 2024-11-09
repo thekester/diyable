@@ -1,41 +1,52 @@
-doctype html
-html(lang="fr")
-  head
-    meta(charset="UTF-8")
-    meta(name="viewport" content="width=device-width, initial-scale=1.0")
-    title= title + " - DIY able"
-    link(rel="stylesheet" href="/styles.css")
-  body
-    header
-      div.logo
-        img(src="/images/logo-diyable.jpeg" alt="DIY able logo")
-      nav
-        ul
-          li: a(href="/") Accueil
-          li: a(href="/projets") Projets
-          li: a(href="#about") À Propos
-          li: a(href="/contact") Contact
-    main
-      section#projets
-        h1 Nos Projets
+//- projets.pug
 
-        //- Section des filtres
-        div.filters
-          button.filter-button(data-category="all") Tous
-          button.filter-button(data-category="iot") IoT
-          button.filter-button(data-category="craft") Artisanat
-          button.filter-button(data-category="autre") Autre
+extends layout
 
-        if projects.length
-          div.project-grid
-            each project in projects
-              .project-card(data-category=project.category)
-                img(src=`/images/${project.image}` alt=`${project.name}`)
-                h3= project.name
-                p= project.description
-                a(href=`/projets/${project.id}`) Voir plus
-        else
-          p Aucun projet disponible pour le moment.
-    footer
-      p © 2024 DIY able - Tous droits réservés
-    script(src="/script.js")
+block content
+  section#projets
+    h1 Nos Projets
+
+    //- Section des filtres
+    .filters
+      button.filter-button(data-category="all" class="active") Tous
+      each category in categories
+        - var friendlyCategory = category
+        if category == 'tech'
+          - friendlyCategory = 'IoT'
+        else if category == 'craft'
+          - friendlyCategory = 'Artisanat'
+        else if category == 'garden'
+          - friendlyCategory = 'Jardinage'
+        else if category == 'woodwork'
+          - friendlyCategory = 'Menuiserie'
+        else if category == 'art'
+          - friendlyCategory = 'Art'
+        else if category == 'recycle'
+          - friendlyCategory = 'Recyclage'
+        else if category == 'other'
+          - friendlyCategory = 'Autre'
+        button.filter-button(data-category=category)= friendlyCategory
+      button.filter-button(data-category="autre") Autre
+
+    //- Always render .project-grid
+    .project-grid
+      if projects.length
+        each project in projects
+          article.project-card(data-category=project.category ? project.category.toLowerCase() : 'autre')
+            .thumb(style=`background: url('/images/${project.image}') no-repeat center; background-size: cover;`)
+            .infos
+              h2.title
+                = project.name
+                span.flag
+              if project.date
+                h3.date= project.date
+              if project.seats
+                h3.seats= `Places restantes: ${project.seats}`
+              p.txt= project.description
+              h3.details
+                a(href=`/projets/${project.id}`) Voir les détails
+      //- Add a placeholder for 'No projects' message
+      p#no-projects-message(style="display: none;") Aucun projet disponible pour cette catégorie.
+
+block scripts
+  script(src="/script.js")

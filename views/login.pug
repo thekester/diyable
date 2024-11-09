@@ -1,0 +1,21 @@
+//- login.pug
+
+extends layout
+
+block content
+  form#loginForm(action="/login" method="post")
+    h1 Connexion
+    div
+      label(for="username") Nom d'utilisateur
+      input(type="text" id="username" name="username" required)
+    div
+      label(for="password") Mot de passe
+      input(type="password" id="password" name="password" required)
+    button(type="submit") Se connecter
+    div.form-footer
+      p Vous n'avez pas de compte ?
+        a(href="/register") Créez un compte
+
+block scripts
+  script(src="/script.js")
+
