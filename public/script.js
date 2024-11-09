@@ -98,28 +98,51 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-function reactToComment(commentId, reaction) {
-  fetch('/comments/react', {
+// function reactToComment(event) {
+//   const commentId = event.target.getAttribute('data-comment-id');
+//   const emoji = event.target.getAttribute('data-emoji');
+
+//   fetch(`/react/${commentId}`, {
+//     method: 'POST',
+//     headers: { 'Content-Type': 'application/json' },
+//     body: JSON.stringify({ emoji })
+//   })
+//   .then(response => response.json())
+//   .then(data => {
+//     if (data.success) {
+//       // Mettez à jour le compteur de réaction sans recharger la page (optionnel)
+//       const countElement = event.target.querySelector('span');
+//       if (countElement) {
+//         countElement.textContent = parseInt(countElement.textContent) + 1;
+//       }
+//     } else {
+//       console.error('Erreur lors de la mise à jour de la réaction.');
+//     }
+//   })
+//   .catch(error => {
+//     console.error('Erreur réseau:', error);
+//   });
+// }
+
+function reactToComment(event) {
+  const commentId = event.target.getAttribute('data-comment-id');
+  const emoji = event.target.getAttribute('data-emoji');
+
+  fetch(`/react/${commentId}`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ commentId, reaction })
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ emoji })
   })
   .then(response => response.json())
   .then(data => {
     if (data.success) {
-      // Met à jour dynamiquement l'affichage des réactions
-      const button = document.querySelector(`.reaction-button[data-id="${commentId}"][data-reaction="${reaction}"]`);
-      if (button) {
-        // Met à jour le compteur de réactions
-        button.textContent = `${reaction} ${data.updatedCount}`;
-      }
+      // Recharger la page pour afficher les réactions mises à jour
+      window.location.reload();
     } else {
-      alert('Erreur lors de la mise à jour de la réaction.');
+      console.error('Erreur lors de la mise à jour de la réaction.');
     }
   })
   .catch(error => {
-    console.error('Erreur de réaction:', error);
+    console.error('Erreur réseau:', error);
   });
 }
