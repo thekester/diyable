@@ -668,6 +668,7 @@ app.post('/comments', (req, res) => {
 });
 
 // Route pour gérer les réactions aux commentaires
+// Route pour gérer les réactions aux commentaires
 app.post('/react/:commentId', (req, res) => {
   if (!req.session.username) {
     return res.status(403).json({ success: false, message: 'Vous devez être connecté pour réagir.' });
@@ -684,30 +685,67 @@ app.post('/react/:commentId', (req, res) => {
   }
 
   // Vérifier si la réaction existe déjà pour cet utilisateur
-  const insertReactionQuery = `
-    INSERT INTO comment_reactions (comment_id, username, emoji, date)
-    VALUES (?, ?, ?, ?)
-    ON CONFLICT(comment_id, username, emoji) DO DELETE
+  const checkReactionQuery = `
+    SELECT id FROM comment_reactions
+    WHERE comment_id = ? AND username = ? AND emoji = ?
   `;
 
-  db.run(insertReactionQuery, [commentId, username, emoji, date], function (err) {
+  db.get(checkReactionQuery, [commentId, username, emoji], (err, row) => {
     if (err) {
-      console.error('Erreur lors de la mise à jour de la réaction:', err);
-      return res.status(500).json({ success: false, message: 'Erreur lors de la mise à jour de la réaction.' });
-    } else {
-      // Compter le nombre total de réactions pour cet emoji sur le commentaire
-      const countReactionsQuery = `
-        SELECT COUNT(*) AS count
-        FROM comment_reactions
-        WHERE comment_id = ? AND emoji = ?
+      console.error('Erreur lors de la vérification de la réaction:', err);
+      return res.status(500).json({ success: false, message: 'Erreur serveur.' });
+    }
+
+    if (row) {
+      // La réaction existe, on la supprime (toggle off)
+      const deleteReactionQuery = `
+        DELETE FROM comment_reactions WHERE id = ?
       `;
-      db.get(countReactionsQuery, [commentId, emoji], (err, row) => {
+      db.run(deleteReactionQuery, [row.id], function (err) {
         if (err) {
-          console.error('Erreur lors du comptage des réactions:', err);
-          return res.status(500).json({ success: false, message: 'Erreur lors du comptage des réactions.' });
-        } else {
-          res.json({ success: true, updatedCount: row.count });
+          console.error('Erreur lors de la suppression de la réaction:', err);
+          return res.status(500).json({ success: false, message: 'Erreur lors de la suppression de la réaction.' });
         }
+        // Compter le nombre total de réactions pour cet emoji sur le commentaire
+        const countReactionsQuery = `
+          SELECT COUNT(*) AS count
+          FROM comment_reactions
+          WHERE comment_id = ? AND emoji = ?
+        `;
+        db.get(countReactionsQuery, [commentId, emoji], (err, countRow) => {
+          if (err) {
+            console.error('Erreur lors du comptage des réactions:', err);
+            return res.status(500).json({ success: false, message: 'Erreur lors du comptage des réactions.' });
+          } else {
+            res.json({ success: true, updatedCount: countRow.count, userHasReacted: false });
+          }
+        });
+      });
+    } else {
+      // La réaction n'existe pas, on l'ajoute (toggle on)
+      const insertReactionQuery = `
+        INSERT INTO comment_reactions (comment_id, username, emoji, date)
+        VALUES (?, ?, ?, ?)
+      `;
+      db.run(insertReactionQuery, [commentId, username, emoji, date], function (err) {
+        if (err) {
+          console.error('Erreur lors de l\'ajout de la réaction:', err);
+          return res.status(500).json({ success: false, message: 'Erreur lors de l\'ajout de la réaction.' });
+        }
+        // Compter le nombre total de réactions pour cet emoji sur le commentaire
+        const countReactionsQuery = `
+          SELECT COUNT(*) AS count
+          FROM comment_reactions
+          WHERE comment_id = ? AND emoji = ?
+        `;
+        db.get(countReactionsQuery, [commentId, emoji], (err, countRow) => {
+          if (err) {
+            console.error('Erreur lors du comptage des réactions:', err);
+            return res.status(500).json({ success: false, message: 'Erreur lors du comptage des réactions.' });
+          } else {
+            res.json({ success: true, updatedCount: countRow.count, userHasReacted: true });
+          }
+        });
       });
     }
   });

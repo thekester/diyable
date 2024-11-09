@@ -142,6 +142,7 @@ function toggleDropdown() {
 }
 
 // Fonction pour gérer les réactions aux commentaires
+// Fonction pour gérer les réactions aux commentaires
 function reactToComment(event) {
   event.preventDefault();
   const button = event.target;
@@ -160,20 +161,21 @@ function reactToComment(event) {
       const count = data.updatedCount;
       button.querySelector('.reaction-count').textContent = count;
 
-      // Optionnel : gérer l'état actif du bouton si vous souhaitez indiquer que l'utilisateur a réagi
+      // Gérer l'état actif du bouton pour indiquer que l'utilisateur a réagi ou non
       if (data.userHasReacted) {
         button.classList.add('reacted');
       } else {
         button.classList.remove('reacted');
       }
     } else {
-      console.error('Erreur lors de la mise à jour de la réaction.');
+      console.error('Erreur lors de la mise à jour de la réaction.', data.message);
     }
   })
   .catch(error => {
     console.error('Erreur réseau:', error);
   });
 }
+
 
 // Fonction pour rendre les boutons de réaction
 function renderReactions(comment) {
