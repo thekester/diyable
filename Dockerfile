@@ -12,6 +12,8 @@ RUN npm install
 
 COPY . .
 
+RUN mkdir -p bdd && chmod -R 777 bdd
+
 ENV PORT=5010
 
 EXPOSE 5010

@@ -9,17 +9,41 @@ A platform for sharing and discovering Do It Yourself (DIY) projects, from craft
 ```
 diyable/
 │
-├── app.js
-├── package.json
-├── package-lock.json          # Generated automatically after `npm init -y`
-├── Dockerfile
 ├── .dockerignore              
+├── .env
+├── .gitignore
+├── app.js
+├── docker-compose.yml
+├── Dockerfile
+├── LICENSE           # MIT License
+├── package-lock.json          # Generated automatically after `npm init -y`
+├── package.json          
+├── README.md         
 │
 ├── actions-runner/             # For the github workflow
+├── assets/
+│   └── images/
+│       └── android-chrome-192x192.png
+│       └── android-chrome-512x512.png
+│       └── apple-touch-icon.png
+│       └── favicon-16x16.png
+│       └── favicon-32x32.png
+│       └── favicon.ico
+│       └── ft_bg.png
+│       └── logo-diyable.png
+│       └── projet-artisanat-exemple.png
+│       └── projet-iot-exemple.png
 ├── bdd/
-│   └── tavenel.db
+│   └── diyable.db
 ├── views/
-│   └── index.pug│
+│   └── about.pug
+│   └── contact.pug
+│   └── index.pug
+│   └── layout.pug
+│   └── login.pug
+│   └── projectDetail.pug
+│   └── projets.pug
+│   └── register.pug
 ├── public/
 │   └── code/
 │       └── jquery.min.js
@@ -33,60 +57,69 @@ diyable/
 ## Setting Up the Project
 
 1. **Create the Project Directories**:
-   ```sh
+```sh
    mkdir -p diyable/views
    mkdir -p diyable/public/code
-   ```
+```
 
 2. **Add jQuery Library**: 
    - Download the jQuery file from: [jQuery 3.7.1](https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js) and save it in the `public/code/` directory.
 
 3. **Initialize Node.js Project**:
-   ```sh
+```sh
    cd diyable/
    npm init -y
-   ```
+```
 
 4. **Install Dependencies**:
-   ```sh
-   npm install express pug sqlite3 dotenv
-   ```
+```sh
+   npm install express pug sqlite3 dotenv body-parser express-session
+```
+
+## Port Configuration in the .env
+To use a specific address for the diyable app you can set the PORT var in the .env like that: PORT=5133 for example
+With that you can easily set the address for the app in order to modify easily the port to avoid the following error Error: listen EADDRINUSE: address already in use :::5136
+
 ## Docker Configuration
 
 1. **Build Docker Image**:
-   ```sh
+```sh
    docker build -t diyable .
-   ```
+```
 
 2. **Run Docker Container**:
-   ```sh
+```sh
    docker run -d -p 5010:5010 --name diyable-container diyable
-   ```
+```
 
 3. **Access the Container** (optional, for debugging or inspection):
-   ```sh
+```sh
    docker exec -it diyable-container /bin/bash
-   ```
+```
 
 ## Alternative Method with Docker Compose
 
 1. **Build and Run Using Docker Compose**:
-   ```sh
+```sh
    docker-compose build
    docker-compose up -d
-   ```
+```
 
 2. **View Logs**:
-   ```sh
+```sh
    docker-compose logs -f
-   ```
+```
 
 ## Simple Method to Start the Application
+To avoid the error of Error: secret option required for sessions you need to run the following command
+```sh
+   echo "SESSION_SECRET=$(openssl rand -hex 64)" >> .env
+```
 
 1. **Run Node Application Directly**:
-   ```sh
+```sh
    node app.js
-   ```
+```
 
 ## Features
 
@@ -129,9 +162,9 @@ diyable/
 ## Example Branch Management
 
 1. **Switch to Docker Environment Branch**:
-   ```sh
+```sh
    git checkout -b newbranch origin/newbranch
-   ```
+```
    
    This will set up a new branch `newbranch` that tracks `origin/newbranch`.
 
