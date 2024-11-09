@@ -865,6 +865,6 @@ form .form-footer a:hover {
   }
 }
 
-#loginForm{
+#loginForm, #registerForm, #contact {
   margin-top: 10%;
 }

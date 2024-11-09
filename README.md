@@ -9,17 +9,41 @@ A platform for sharing and discovering Do It Yourself (DIY) projects, from craft
 ```
 diyable/
 │
-├── app.js
-├── package.json
-├── package-lock.json          # Generated automatically after `npm init -y`
-├── Dockerfile
 ├── .dockerignore              
+├── .env
+├── .gitignore
+├── app.js
+├── docker-compose.yml
+├── Dockerfile
+├── LICENSE           # MIT License
+├── package-lock.json          # Generated automatically after `npm init -y`
+├── package.json          
+├── README.md         
 │
 ├── actions-runner/             # For the github workflow
+├── assets/
+│   └── images/
+│       └── android-chrome-192x192.png
+│       └── android-chrome-512x512.png
+│       └── apple-touch-icon.png
+│       └── favicon-16x16.png
+│       └── favicon-32x32.png
+│       └── favicon.ico
+│       └── ft_bg.png
+│       └── logo-diyable.png
+│       └── projet-artisanat-exemple.png
+│       └── projet-iot-exemple.png
 ├── bdd/
-│   └── tavenel.db
+│   └── diyable.db
 ├── views/
-│   └── index.pug│
+│   └── about.pug
+│   └── contact.pug
+│   └── index.pug
+│   └── layout.pug
+│   └── login.pug
+│   └── projectDetail.pug
+│   └── projets.pug
+│   └── register.pug
 ├── public/
 │   └── code/
 │       └── jquery.min.js
