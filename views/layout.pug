@@ -24,21 +24,23 @@ html(lang="fr")
         img(src="/images/logo-diyable.jpeg" alt="DIY able logo")
       nav
         ul
-          li: a(href="/") Accueil
-          li: a(href="/projets") Projets
-          li: a(href="/about") À Propos
-          li: a(href="/contact") Contact
+          li: a.nav-link(href="/") Accueil
+          li: a.nav-link(href="/projets") Projets
+          li: a.nav-link(href="/about") À Propos
+          li: a.nav-link(href="/contact") Contact
           //- Logique pour afficher le nom d'utilisateur ou le lien de connexion
           if username
             li
-              a(href="javascript:void(0)" id="usernameDropdown" onclick="toggleDropdown()") #{username}
+              a(href="javascript:void(0)" id="usernameDropdown") #{username}
               ul#dropdownMenu.dropdown-menu
                 li: a(href="/profile") Mon Profil
                 li: a(href="/logout") Déconnexion
+
           else
             li
               a(href="/login")
                 button(type="button" id="connexion") Connexion
+
     main
       block content
 
@@ -107,7 +109,8 @@ html(lang="fr")
           a(href="/refund-policy") Politique de Remboursement
           |  |  
           a(href="/accessibility-policy") Politique d'Accessibilité
+          |  |  
+          a(href="/legal-info") Mentions légales
 
     //- Inclusion des scripts
-    script(src="/script.js")
     block scripts

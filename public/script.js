@@ -76,19 +76,8 @@ document.addEventListener('DOMContentLoaded', function () {
     console.warn("Aucun bouton héro trouvé sur la page.");
   }
 
-  // Fonctionnalité du menu déroulant pour le nom d'utilisateur
-  const usernameDropdown = document.getElementById('usernameDropdown');
-  if (usernameDropdown) {
-    usernameDropdown.addEventListener('click', toggleDropdown);
-  }
+ 
 
-  // Fermer le menu si l'utilisateur clique en dehors de celui-ci
-  window.addEventListener('click', function(event) {
-    const dropdownMenu = document.getElementById('dropdownMenu');
-    if (dropdownMenu && usernameDropdown && !usernameDropdown.contains(event.target) && !dropdownMenu.contains(event.target)) {
-      dropdownMenu.style.display = 'none'; // Cache le menu si on clique ailleurs
-    }
-  });
 
   // Gestion de l'affichage des commentaires des projets
   const commentForm = document.getElementById('commentForm');
@@ -122,74 +111,110 @@ document.addEventListener('DOMContentLoaded', function () {
           `;
           commentList.appendChild(commentDiv);
         });
+        // Attacher les événements aux nouveaux boutons de réaction
+        attachReactionEventListeners();
         this.reset(); // Réinitialise le formulaire
       } else {
         alert('Erreur lors de l\'envoi du commentaire.');
       }
     });
   }
+
+  // Fonction pour gérer les réactions aux commentaires
+  function reactToComment(event) {
+    event.preventDefault();
+    const button = event.currentTarget;
+    const commentId = button.getAttribute('data-comment-id');
+    const emoji = button.getAttribute('data-emoji');
+
+    fetch(`/react/${commentId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ emoji })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        // Mettre à jour le compteur de réactions sans recharger la page
+        const count = data.updatedCount;
+        button.querySelector('.reaction-count').textContent = count;
+
+        // Gérer l'état actif du bouton pour indiquer que l'utilisateur a réagi ou non
+        if (data.userHasReacted) {
+          button.classList.add('reacted');
+        } else {
+          button.classList.remove('reacted');
+        }
+      } else {
+        console.error('Erreur lors de la mise à jour de la réaction.', data.message);
+      }
+    })
+    .catch(error => {
+      console.error('Erreur réseau:', error);
+    });
+  }
+
+  // Fonction pour rendre les boutons de réaction et attacher les événements
+  function renderReactions(comment) {
+    const reactions = ['👍', '💩', '❤️', '😂'];
+    let html = '';
+    reactions.forEach(emoji => {
+      const count = comment.reactions && comment.reactions[emoji] ? comment.reactions[emoji] : 0;
+      html += `<button
+        type="button"
+        class="reaction-button"
+        data-comment-id="${comment.id}"
+        data-emoji="${emoji}"
+      >${emoji} <span class="reaction-count">${count}</span></button> `;
+    });
+    return html;
+  }
+
+  // Attacher les événements aux boutons de réaction
+  function attachReactionEventListeners() {
+    const reactionButtons = document.querySelectorAll('.reaction-button');
+    reactionButtons.forEach(button => {
+      button.addEventListener('click', reactToComment);
+    });
+  }
+
+  // Appeler la fonction pour attacher les événements après le chargement initial
+  attachReactionEventListeners();
 });
 
-// Fonction pour basculer l'affichage du menu déroulant
-function toggleDropdown() {
+
+ // Fonction pour basculer l'affichage du menu déroulant
+function toggleDropdown(event) {
+  event.stopPropagation(); // Empêche la propagation de l'événement pour éviter de fermer le menu immédiatement
+  console.log('toggleDropdown a été appelé'); // Pour débogage
   const dropdownMenu = document.getElementById('dropdownMenu');
-  // Vérifiez si le menu est actuellement visible
-  if (dropdownMenu.style.display === 'flex' || dropdownMenu.style.display === 'block') {
-    dropdownMenu.style.display = 'none'; // Cache le menu
+  if (dropdownMenu.classList.contains('show')) {
+    dropdownMenu.classList.remove('show'); // Cache le menu
   } else {
-    dropdownMenu.style.display = 'flex'; // Affiche le menu
+    dropdownMenu.classList.add('show'); // Affiche le menu
   }
 }
 
-// Fonction pour gérer les réactions aux commentaires
-// Fonction pour gérer les réactions aux commentaires
-function reactToComment(event) {
-  event.preventDefault();
-  const button = event.target;
-  const commentId = button.getAttribute('data-comment-id');
-  const emoji = button.getAttribute('data-emoji');
+// Fonctionnalité du menu déroulant pour le nom d'utilisateur
+const usernameDropdown = document.getElementById('usernameDropdown');
+if (usernameDropdown) {
+  console.log('Élément usernameDropdown trouvé'); // Pour débogage
+  usernameDropdown.addEventListener('click', toggleDropdown);
+} else {
+  console.warn('Élément usernameDropdown non trouvé');
+}
 
-  fetch(`/react/${commentId}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ emoji })
-  })
-  .then(response => response.json())
-  .then(data => {
-    if (data.success) {
-      // Mettre à jour le compteur de réactions sans recharger la page
-      const count = data.updatedCount;
-      button.querySelector('.reaction-count').textContent = count;
 
-      // Gérer l'état actif du bouton pour indiquer que l'utilisateur a réagi ou non
-      if (data.userHasReacted) {
-        button.classList.add('reacted');
-      } else {
-        button.classList.remove('reacted');
-      }
-    } else {
-      console.error('Erreur lors de la mise à jour de la réaction.', data.message);
+  // Fermer le menu si l'utilisateur clique en dehors de celui-ci
+  /*
+  window.addEventListener('click', function(event) {
+    const dropdownMenu = document.getElementById('dropdownMenu');
+    if (
+      dropdownMenu &&
+      usernameDropdown &&
+      !usernameDropdown.contains(event.target) &&
+      !dropdownMenu.contains(event.target)
+    ) {
+      dropdownMenu.classList.remove('show'); // Cache le menu si on clique ailleurs
     }
-  })
-  .catch(error => {
-    console.error('Erreur réseau:', error);
-  });
-}
-
-
-// Fonction pour rendre les boutons de réaction
-function renderReactions(comment) {
-  const reactions = ['👍', '💩', '❤️', '😂'];
-  let html = '';
-  reactions.forEach(emoji => {
-    const count = comment.reactions && comment.reactions[emoji] ? comment.reactions[emoji] : 0;
-    html += `<button
-      type="button"
-      class="reaction-button"
-      data-comment-id="${comment.id}"
-      data-emoji="${emoji}"
-      onclick="reactToComment(event)"
-    >${emoji} <span class="reaction-count">${count}</span></button> `;
-  });
-  return html;
-}
+  });*/
