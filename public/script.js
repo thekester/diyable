@@ -80,26 +80,6 @@ document.addEventListener('DOMContentLoaded', function () {
   const commentForm = document.getElementById('commentForm');
   if (commentForm) {
     commentForm.addEventListener('submit', function (event) {
-      // Pas de prévention de l'action par défaut ici, car le formulaire sera soumis et la page rechargée
-      // Si vous souhaitez gérer l'envoi du formulaire en AJAX, vous pouvez décommenter les lignes ci-dessous
-      /*
-      event.preventDefault(); // Empêche la soumission classique du formulaire
-      const formData = new FormData(this);
-      fetch(this.action, {
-        method: 'POST',
-        body: formData
-      })
-        .then((response) => {
-          if (response.ok) {
-            // Gérer la mise à jour des commentaires sans recharger la page
-          } else {
-            alert("Erreur lors de l'envoi du commentaire.");
-          }
-        })
-        .catch((error) => {
-          console.error('Erreur réseau:', error);
-        });
-      */
     });
   }
 
@@ -160,6 +140,42 @@ document.addEventListener('DOMContentLoaded', function () {
       button.addEventListener('click', reactToComment);
     });
   }
+
+    // Fonction pour gérer la suppression d'un commentaire
+  function deleteComment(event) {
+    const button = event.currentTarget;
+    const commentId = button.getAttribute('data-comment-id');
+
+    fetch(`/comments/${commentId}`, {
+      method: 'DELETE',
+    })
+      .then((response) => {
+        if (response.ok) {
+          const commentElement = document.querySelector(`.comment[data-comment-id="${commentId}"]`);
+          if (commentElement) {
+            commentElement.remove();
+          }
+        } else {
+          return response.text().then((message) => {
+            console.error('Erreur lors de la suppression du commentaire:', message);
+          });
+        }
+      })
+      .catch((error) => {
+        console.error('Erreur réseau:', error);
+      });
+  }
+
+  // Attacher les événements aux boutons de suppression
+  function attachDeleteCommentEventListeners() {
+    const deleteButtons = document.querySelectorAll('.delete-comment-button');
+    deleteButtons.forEach((button) => {
+      button.addEventListener('click', deleteComment);
+    });
+  }
+
+  // Appeler les fonctions d'attachement après le rendu des commentaires
+  attachDeleteCommentEventListeners();
 
   // Appeler la fonction pour attacher les événements après le chargement initial
   attachReactionEventListeners();

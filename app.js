@@ -605,6 +605,21 @@ app.get('/about', (req, res) => {
   res.render('about', { title: 'À Propos' });
 });
 
+// Route vers les condition d'utilisations
+app.get('/terms-of-service', (req, res) => {
+  res.render('terms-of-service', { title: 'Condition d\'utilisation' });
+});
+
+// Route la politique de confidentialité
+app.get('/privacy-policy', (req, res) => {
+  res.render('privacy-policy', { title: 'politique de confidentialité' });
+});
+
+// Route les mentions légal
+app.get('/legal-info', (req, res) => {
+  res.render('legal-info', { title: 'Mentions légal' });
+});
+
 // Route pour les projets
 app.get('/projets', (req, res) => {
   const query = `SELECT * FROM projects ORDER BY date DESC`;
@@ -643,6 +658,7 @@ app.get('/projets', (req, res) => {
 // Route pour le détail d'un projet
 app.get('/projets/:id', (req, res) => {
   const projectId = req.params.id;
+  const userId = req.session.userId;
 
   // Requête pour récupérer les détails du projet
   const projectQuery = `SELECT * FROM projects WHERE id = ?`;
@@ -681,6 +697,7 @@ app.get('/projets/:id', (req, res) => {
           comments: [],
           projectId,
           username: req.session.username,
+          currentUserId: req.session.userId
         });
       }
 
@@ -720,6 +737,7 @@ app.get('/projets/:id', (req, res) => {
           comments,
           projectId,
           username: req.session.username,
+          currentUserId: req.session.userId
         });
       });
     });
@@ -792,6 +810,7 @@ app.post('/register', (req, res) => {
         }
       } else {
         res.send('Compte créé avec succès');
+        res.redirect('/');
       }
     }
   );
@@ -920,6 +939,63 @@ app.post('/react/:commentId', (req, res) => {
     }
   });
 });
+
+// Route pour supprimer un commentaire
+app.delete('/comments/:id', (req, res) => {
+  const commentId = req.params.id;
+  const userId = req.session.userId; // ID de l'utilisateur connecté
+  const adminUsername = process.env.ADMIN_USERNAME; // Nom d'utilisateur admin défini dans .env
+
+  if (!userId) {
+    return res.status(403).send('Vous devez être connecté pour supprimer des commentaires.');
+  }
+
+  // Récupération des informations de l'utilisateur connecté
+  db.get(`SELECT * FROM users WHERE id = ?`, [userId], (err, user) => {
+    if (err) {
+      console.error('Erreur lors de la vérification de l\'utilisateur:', err.message);
+      return res.status(500).send('Erreur serveur.');
+    }
+
+    if (!user) {
+      return res.status(403).send('Utilisateur non trouvé.');
+    }
+
+    // Si l'utilisateur est l'admin défini dans .env, il peut supprimer n'importe quel commentaire
+    if (user.username === adminUsername) {
+      db.run(`DELETE FROM comments WHERE id = ?`, [commentId], function (err) {
+        if (err) {
+          console.error('Erreur lors de la suppression du commentaire:', err.message);
+          return res.status(500).send('Erreur lors de la suppression du commentaire.');
+        }
+        return res.status(200).send('Commentaire supprimé avec succès.');
+      });
+    } else {
+      // Sinon, vérifier si l'utilisateur est propriétaire du commentaire
+      db.get(`SELECT * FROM comments WHERE id = ? AND userId = ?`, [commentId, userId], (err, comment) => {
+        if (err) {
+          console.error('Erreur lors de la vérification du commentaire:', err.message);
+          return res.status(500).send('Erreur serveur.');
+        }
+
+        if (!comment) {
+          return res.status(403).send('Vous n\'êtes pas autorisé à supprimer ce commentaire.');
+        }
+
+        // Suppression du commentaire
+        db.run(`DELETE FROM comments WHERE id = ?`, [commentId], function (err) {
+          if (err) {
+            console.error('Erreur lors de la suppression du commentaire:', err.message);
+            return res.status(500).send('Erreur lors de la suppression du commentaire.');
+          }
+          res.status(200).send('Commentaire supprimé avec succès.');
+        });
+      });
+    }
+  });
+});
+
+
 
 // Démarrage du serveur avec port configurable via variable d'environnement
 const PORT = process.env.PORT || 5010;

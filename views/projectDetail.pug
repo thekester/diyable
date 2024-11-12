@@ -1,5 +1,3 @@
-//- projectDetails.pug
-
 extends layout
 
 block content
@@ -29,6 +27,13 @@ block content
               span.comment-date #{new Date(comment.date).toLocaleDateString('fr-FR')}
             .comment-body.comment-box
               p= comment.comment
+              if comment.userId === currentUserId || username === process.env.ADMIN_USERNAME
+                button.delete-button(
+                  type="button"
+                  data-comment-id=comment.id
+                  title="Supprimer ce commentaire"
+                )
+                  i.fa.fa-trash
             .reactions
               - const reactionsList = ['👍', '💩', '❤️', '😂']
               each emoji in reactionsList
