@@ -117,22 +117,6 @@ document.addEventListener('DOMContentLoaded', function () {
       });
   }
 
-  // Fonction pour rendre les boutons de réaction et attacher les événements
-  function renderReactions(comment) {
-    const reactions = ['👍', '💩', '❤️', '😂'];
-    let html = '';
-    reactions.forEach((emoji) => {
-      const count = comment.reactions && comment.reactions[emoji] ? comment.reactions[emoji] : 0;
-      html += `<button
-          type="button"
-          class="reaction-button"
-          data-comment-id="${comment.id}"
-          data-emoji="${emoji}"
-        >${emoji} <span class="reaction-count">${count}</span></button> `;
-    });
-    return html;
-  }
-
   // Attacher les événements aux boutons de réaction
   function attachReactionEventListeners() {
     const reactionButtons = document.querySelectorAll('.reaction-button');
@@ -141,41 +125,59 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-    // Fonction pour gérer la suppression d'un commentaire
+  // Fonction pour gérer la suppression d'un commentaire
   function deleteComment(event) {
+    event.preventDefault();
     const button = event.currentTarget;
     const commentId = button.getAttribute('data-comment-id');
 
+    // Demande de confirmation avant de supprimer
+    if (!confirm('Êtes-vous sûr de vouloir supprimer ce commentaire ?')) {
+      return;
+    }
+
+    // Désactivation du bouton pour éviter les clics multiples
+    button.disabled = true;
+    button.textContent = 'Suppression...';
+
+    // Envoi de la requête de suppression
+    console.log('Suppression du commentaire avec ID:', commentId);
     fetch(`/comments/${commentId}`, {
       method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json'
+      }
     })
-      .then((response) => {
-        if (response.ok) {
-          const commentElement = document.querySelector(`.comment[data-comment-id="${commentId}"]`);
-          if (commentElement) {
-            commentElement.remove();
-          }
-        } else {
-          return response.text().then((message) => {
-            console.error('Erreur lors de la suppression du commentaire:', message);
-          });
+    .then(response => {
+      if (response.ok) {
+        // Suppression du commentaire du DOM
+        const commentElement = button.closest('.comment');
+        if (commentElement) {
+          commentElement.remove();
         }
-      })
-      .catch((error) => {
-        console.error('Erreur réseau:', error);
-      });
+      } else {
+        console.error('Erreur lors de la suppression du commentaire.');
+        button.disabled = false; // Réactivation du bouton si la suppression échoue
+        button.textContent = ''; // Remettre le texte original ou icône
+      }
+    })
+    .catch(error => {
+      console.error('Erreur réseau :', error);
+      button.disabled = false; // Réactivation du bouton
+      button.textContent = ''; // Remettre le texte original ou icône
+    });
   }
 
-  // Attacher les événements aux boutons de suppression
-  function attachDeleteCommentEventListeners() {
-    const deleteButtons = document.querySelectorAll('.delete-comment-button');
-    deleteButtons.forEach((button) => {
+  // Attache les événements aux boutons de suppression
+  function attachDeleteEventListeners() {
+    const deleteButtons = document.querySelectorAll('.delete-button');
+    deleteButtons.forEach(button => {
       button.addEventListener('click', deleteComment);
     });
   }
 
-  // Appeler les fonctions d'attachement après le rendu des commentaires
-  attachDeleteCommentEventListeners();
+  // Appeler la fonction après le chargement du contenu
+  attachDeleteEventListeners();
 
   // Appeler la fonction pour attacher les événements après le chargement initial
   attachReactionEventListeners();

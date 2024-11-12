@@ -593,6 +593,10 @@ form .form-footer a:hover {
   font-size: 1.1em;
 }
 
+.delete-button:hover {
+  opacity: 0.8;
+}
+
 .comment {
   position: relative; /* Nécessaire pour que le bouton soit positionné absolument par rapport au commentaire */
 }

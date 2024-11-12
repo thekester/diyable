@@ -940,11 +940,14 @@ app.post('/react/:commentId', (req, res) => {
   });
 });
 
-// Route pour supprimer un commentaire
+// Route pour supprimer un commentaire, avec suppression des réactions associées
 app.delete('/comments/:id', (req, res) => {
+  console.log('Requête reçue pour suppression du commentaire avec ID:', req.params.id);
   const commentId = req.params.id;
   const userId = req.session.userId; // ID de l'utilisateur connecté
   const adminUsername = process.env.ADMIN_USERNAME; // Nom d'utilisateur admin défini dans .env
+  console.log('Utilisateur connecté ID:', userId);
+
 
   if (!userId) {
     return res.status(403).send('Vous devez être connecté pour supprimer des commentaires.');
@@ -961,25 +964,12 @@ app.delete('/comments/:id', (req, res) => {
       return res.status(403).send('Utilisateur non trouvé.');
     }
 
-    // Si l'utilisateur est l'admin défini dans .env, il peut supprimer n'importe quel commentaire
-    if (user.username === adminUsername) {
-      db.run(`DELETE FROM comments WHERE id = ?`, [commentId], function (err) {
+    const deleteComment = () => {
+      // Suppression des réactions associées avant de supprimer le commentaire
+      db.run(`DELETE FROM comment_reactions WHERE comment_id = ?`, [commentId], (err) => {
         if (err) {
-          console.error('Erreur lors de la suppression du commentaire:', err.message);
+          console.error('Erreur lors de la suppression des réactions associées:', err.message);
           return res.status(500).send('Erreur lors de la suppression du commentaire.');
-        }
-        return res.status(200).send('Commentaire supprimé avec succès.');
-      });
-    } else {
-      // Sinon, vérifier si l'utilisateur est propriétaire du commentaire
-      db.get(`SELECT * FROM comments WHERE id = ? AND userId = ?`, [commentId, userId], (err, comment) => {
-        if (err) {
-          console.error('Erreur lors de la vérification du commentaire:', err.message);
-          return res.status(500).send('Erreur serveur.');
-        }
-
-        if (!comment) {
-          return res.status(403).send('Vous n\'êtes pas autorisé à supprimer ce commentaire.');
         }
 
         // Suppression du commentaire
@@ -991,11 +981,28 @@ app.delete('/comments/:id', (req, res) => {
           res.status(200).send('Commentaire supprimé avec succès.');
         });
       });
+    };
+
+    // Si l'utilisateur est l'admin défini dans .env, il peut supprimer n'importe quel commentaire
+    if (user.username === adminUsername) {
+      return deleteComment();
     }
+
+    // Vérifier si l'utilisateur est propriétaire du commentaire
+    db.get(`SELECT * FROM comments WHERE id = ? AND userId = ?`, [commentId, userId], (err, comment) => {
+      if (err) {
+        console.error('Erreur lors de la vérification du commentaire:', err.message);
+        return res.status(500).send('Erreur serveur.');
+      }
+
+      if (!comment) {
+        return res.status(403).send('Vous n\'êtes pas autorisé à supprimer ce commentaire.');
+      }
+
+      deleteComment();
+    });
   });
 });
-
-
 
 // Démarrage du serveur avec port configurable via variable d'environnement
 const PORT = process.env.PORT || 5010;
