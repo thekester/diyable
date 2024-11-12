@@ -73,22 +73,35 @@ diyable/
 
 4. **Install Dependencies**:
 ```sh
-   npm install express pug sqlite3 dotenv body-parser express-session
+   npm install express pug sqlite3 dotenv body-parser express-session multer
 ```
 
 ## Port Configuration in the .env
 To use a specific address for the diyable app you can set the PORT var in the .env like that: PORT=5133 for example
 With that you can easily set the address for the app in order to modify easily the port to avoid the following error Error: listen EADDRINUSE: address already in use :::5136
 
-```txt
-PORT=<Your_PORT>>
-SESSION_SECRET=<Your_SESSION_SECRET>
+```sh
+  PORT=<Your_PORT>>
+  SESSION_SECRET=<Your_SESSION_SECRET>
 
-ADMIN_USERNAME=<Your_ADMIN_USERNAME>
-ADMIN_PASSWORD=<Your_ADMIN_PASSWORD>
-ADMIN_EMAIL=<Your_ADMIN_EMAIL>
+  ADMIN_USERNAME=<Your_ADMIN_USERNAME>
+  ADMIN_PASSWORD=<Your_ADMIN_PASSWORD>
+  ADMIN_EMAIL=<Your_ADMIN_EMAIL>
 ```
 
+## Migration script
+
+If you have an old version of the database and you want to migrate to the new database you can use the following command:
+
+```sh
+  node old_to_new_migration.js
+```
+
+To install the dependencies for the migration script you can run the following script:
+
+```sh
+  npm install sqlite3 async
+```
 
 ## Docker Configuration
 

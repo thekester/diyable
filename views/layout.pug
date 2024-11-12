@@ -30,6 +30,7 @@ html(lang="fr")
           li: a.nav-link(href="/contact") Contact
           //- Logique pour afficher le nom d'utilisateur ou le lien de connexion
           if username
+            li: a.nav-link(href="/projets/ajouter") Ajouter un Projet
             li
               a(href="javascript:void(0)" id="usernameDropdown") #{username}
               ul#dropdownMenu.dropdown-menu

@@ -6,6 +6,10 @@ block content
   section#projets
     h1 Nos Projets
 
+    //- Bouton pour ajouter un projet si l'utilisateur est connecté
+    if username
+      a.button(href='/projets/ajouter') Ajouter un Projet
+
     //- Section des filtres
     .filters
       button.filter-button(data-category="all" class="active") Tous
@@ -33,7 +37,7 @@ block content
       if projects.length
         each project in projects
           article.project-card(data-category=project.category ? project.category.toLowerCase() : 'autre')
-            .thumb(style=`background: url('/images/${project.image}') no-repeat center; background-size: cover;`)
+            .thumb(style=`background: url('${project.image}') no-repeat center; background-size: cover;`)
             .infos
               h2.title
                 = project.name

@@ -7,11 +7,12 @@ const sqlite3 = require('sqlite3').verbose(); // Import sqlite3
 const fs = require('fs');
 const crypto = require('crypto');
 const session = require('express-session');
-const async = require('async'); // Module pour gérer les opérations asynchrones
+const multer = require('multer'); // Importer multer pour la gestion des téléchargements de fichiers
 
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use('/images', express.static(path.join(__dirname, 'assets', 'images')));
 
 // Configuration de la session
 app.use(
@@ -52,6 +53,28 @@ if (!fs.existsSync(imagesDir)) {
   fs.mkdirSync(imagesDir, { recursive: true });
 }
 
+// Configuration de multer pour les téléchargements de fichiers
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'public/uploads'); // Dossier pour les téléchargements
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
+  },
+});
+
+const upload = multer({ storage: storage });
+
+// Assurez-vous que le dossier 'public/uploads' existe
+const uploadsDir = path.join(__dirname, 'public', 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+// Servir le dossier uploads
+app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
+
 // Vérifier les permissions avant d'ouvrir la base de données
 try {
   fs.accessSync(dbPath, fs.constants.W_OK);
@@ -62,6 +85,16 @@ try {
 }
 
 // Création des requêtes de création de tables avec les clés étrangères
+const createTableUsersQuery = `
+  CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT UNIQUE NOT NULL,
+    email TEXT UNIQUE NOT NULL,
+    password TEXT NOT NULL,
+    salt TEXT NOT NULL
+  )
+`;
+
 const createTableProjectsQuery = `
   CREATE TABLE IF NOT EXISTS projects (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -70,18 +103,12 @@ const createTableProjectsQuery = `
     description TEXT,
     category TEXT,
     image TEXT,
+    userId INTEGER NOT NULL,
+    FOREIGN KEY (userId) REFERENCES users(id),
     UNIQUE(name, date, image)
   )
 `;
-const createTableUsersQuery = `
-  CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT UNIQUE NOT NULL,
-    email TEXT NOT NULL,
-    password TEXT NOT NULL,
-    salt TEXT NOT NULL
-  )
-`;
+
 const createTableCommentsQuery = `
   CREATE TABLE IF NOT EXISTS comments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -93,6 +120,7 @@ const createTableCommentsQuery = `
     FOREIGN KEY (userId) REFERENCES users(id)
   )
 `;
+
 const createTableCommentReactionsQuery = `
   CREATE TABLE IF NOT EXISTS comment_reactions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -122,21 +150,19 @@ const db = new sqlite3.Database(dbPath, (err) => {
 
       // Création ou modification des tables
       db.serialize(() => {
-        db.run(createTableProjectsQuery, (err) => {
-          if (err) {
-            console.error('Erreur lors de la création de la table projects:', err.message);
-          } else {
-            console.log('Table "projects" créée ou déjà existante.');
-            // Vérifier et insérer des données initiales
-            checkAndInsertInitialData();
-          }
-        });
-
         db.run(createTableUsersQuery, (err) => {
           if (err) {
             console.error('Erreur lors de la création de la table users:', err.message);
           } else {
             console.log('Table "users" créée ou déjà existante.');
+          }
+        });
+
+        db.run(createTableProjectsQuery, (err) => {
+          if (err) {
+            console.error('Erreur lors de la création de la table projects:', err.message);
+          } else {
+            console.log('Table "projects" créée ou déjà existante.');
           }
         });
 
@@ -150,8 +176,6 @@ const db = new sqlite3.Database(dbPath, (err) => {
           } else {
             console.log('Table "comments" créée ou déjà existante.');
           }
-          // Après avoir créé la table comments, vérifier et migrer si nécessaire
-          migrateCommentsTable();
         });
 
         db.run(createTableCommentReactionsQuery, (err) => {
@@ -164,19 +188,48 @@ const db = new sqlite3.Database(dbPath, (err) => {
           } else {
             console.log('Table "comment_reactions" créée ou déjà existante.');
           }
-          // Migrer les réactions existantes
-          migrateCommentReactionsTable();
         });
 
-        // Après avoir créé les tables et effectué les migrations
-        createAdminUser();
+        // Après avoir créé les tables
+        addUserIdToProjectsTable();
+
+        createAdminUser((err, adminUserId) => {
+          if (err) {
+            console.error("Erreur lors de la création de l'utilisateur admin:", err);
+          } else {
+            checkAndInsertInitialData(adminUserId);
+          }
+        });
       });
     });
   }
 });
 
+// Fonction pour ajouter la colonne userId à la table projects si elle n'existe pas
+const addUserIdToProjectsTable = () => {
+  db.all(`PRAGMA table_info(projects)`, (err, columns) => {
+    if (err) {
+      console.error('Erreur lors de la vérification des colonnes:', err.message);
+      return;
+    }
+
+    const hasUserId = columns.some((col) => col.name === 'userId');
+
+    if (!hasUserId) {
+      // Ajouter la colonne userId avec la valeur par défaut 1 (admin)
+      db.run(`ALTER TABLE projects ADD COLUMN userId INTEGER NOT NULL DEFAULT 1`, (err) => {
+        if (err) {
+          console.error("Erreur lors de l'ajout de la colonne userId:", err.message);
+        } else {
+          console.log('Colonne userId ajoutée à la table projects.');
+        }
+      });
+    }
+  });
+};
+
 // Fonction pour vérifier, recréer la table si nécessaire et insérer des données initiales
-const checkAndInsertInitialData = () => {
+const checkAndInsertInitialData = (adminUserId) => {
   console.log('Vérification et insertion des données initiales.');
 
   // Vérifier si la contrainte UNIQUE est présente
@@ -191,15 +244,15 @@ const checkAndInsertInitialData = () => {
 
     if (!hasUniqueConstraint) {
       // Recréer la table avec la contrainte UNIQUE
-      recreateProjectsTable();
+      recreateProjectsTable(adminUserId);
     } else {
       // Procéder à l'insertion des données initiales
-      insertInitialProjectsData();
+      insertInitialProjectsData(adminUserId);
     }
   });
 };
 
-const recreateProjectsTable = () => {
+const recreateProjectsTable = (adminUserId) => {
   db.serialize(() => {
     db.run(`ALTER TABLE projects RENAME TO projects_old`, (err) => {
       if (err) {
@@ -217,8 +270,8 @@ const recreateProjectsTable = () => {
 
         db.run(
           `
-          INSERT INTO projects (id, date, name, description, category, image)
-          SELECT id, date, name, description, category, image
+          INSERT INTO projects (id, date, name, description, category, image, userId)
+          SELECT id, date, name, description, category, image, userId
           FROM projects_old
           GROUP BY name, date, image
         `,
@@ -236,7 +289,7 @@ const recreateProjectsTable = () => {
               }
               console.log('Table projects_old supprimée.');
               // Insérer les données initiales
-              insertInitialProjectsData();
+              insertInitialProjectsData(adminUserId);
             });
           }
         );
@@ -245,7 +298,7 @@ const recreateProjectsTable = () => {
   });
 };
 
-const insertInitialProjectsData = () => {
+const insertInitialProjectsData = (adminUserId) => {
   // Suppression des doublons existants
   const deleteDuplicatesQuery = `
     DELETE FROM projects
@@ -263,264 +316,53 @@ const insertInitialProjectsData = () => {
     }
     console.log(`Doublons supprimés. ${this.changes} enregistrements affectés.`);
 
-    // Insertion ou mise à jour des données initiales
+    const projects = [
+      { date: '2024-11-07', name: 'Projet IoT Innovant', description: 'Découvrez comment ce projet IoT peut transformer votre quotidien.', category: 'tech', image: 'images/projet-iot-exemple.jpg' },
+      { date: '2024-11-06', name: 'Atelier de Bricolage', description: 'Un projet de bricolage pour embellir votre espace de vie.', category: 'craft', image: 'images/atelier-bricolage.jpg' },
+      { date: '2024-11-03', name: 'Création d\'un Jardin Vertical', description: 'Fabriquez un jardin vertical pour votre balcon ou intérieur.', category: 'garden', image: 'images/jardin-vertical.jpg' },
+      { date: '2024-11-01', name: 'Fabriquer sa Propre Table en Bois', description: 'Construisez une table en bois personnalisée pour votre maison.', category: 'woodwork', image: 'images/table-bois.jpg' },
+      { date: '2024-10-29', name: 'Réaliser des Bougies Maison', description: 'Apprenez à créer des bougies naturelles avec vos propres parfums.', category: 'craft', image: 'images/bougies-maison.jpg' },
+      { date: '2024-10-26', name: 'Robot Suiveur de Ligne', description: 'Assemblez un petit robot qui suit une ligne tracée au sol.', category: 'tech', image: 'images/robot-ligne.jpg' },
+      { date: '2024-10-23', name: 'Peinture sur Tissu', description: 'Personnalisez vos vêtements avec des motifs peints à la main.', category: 'art', image: 'images/peinture-tissu.jpg' },
+      { date: '2024-10-15', name: 'Lampe en Bouteille Recyclée', description: 'Transformez une bouteille en une lampe élégante.', category: 'recycle', image: 'images/lampe-bouteille.jpg' },
+      { date: '2024-10-11', name: 'Étagère Murale DIY', description: 'Créez une étagère murale design avec des matériaux simples.', category: 'woodwork', image: 'images/etagere-murale.jpg' },
+      { date: '2024-10-08', name: 'Fabriquer un Cerf-Volant', description: 'Construisez un cerf-volant pour profiter des journées venteuses.', category: 'craft', image: 'images/cerf-volant.jpg' },
+      { date: '2024-10-04', name: 'Enceinte Bluetooth Maison', description: 'Assemblez votre propre enceinte Bluetooth portable.', category: 'tech', image: 'images/enceinte-bluetooth.jpg' },
+      { date: '2024-10-01', name: 'Pots de Fleurs Peints', description: 'Donnez de la couleur à vos plantes avec des pots personnalisés.', category: 'art', image: 'images/pots-fleurs-peints.jpg' },
+      { date: '2024-09-28', name: 'Horloge Murale en Vinyle', description: 'Recyclez de vieux disques vinyles en horloges murales.', category: 'recycle', image: 'images/horloge-vinyle.jpg' },
+      { date: '2024-09-25', name: 'Fabriquer du Savon Naturel', description: 'Créez vos propres savons avec des ingrédients naturels.', category: 'craft', image: 'images/savon-naturel.jpg' },
+      { date: '2024-09-21', name: 'Station Météo Connectée', description: 'Construisez une station météo avec un microcontrôleur.', category: 'tech', image: 'images/station-meteo.jpg' },
+      { date: '2024-09-17', name: 'Décoration en Macramé', description: 'Apprenez l\'art du macramé pour décorer votre intérieur.', category: 'craft', image: 'images/macrame.jpg' },
+      { date: '2024-09-14', name: 'Composteur de Jardin', description: 'Fabriquez un composteur pour recycler vos déchets organiques.', category: 'garden', image: 'images/composteur.jpg' },
+      { date: '2024-09-11', name: 'Cadre Photo en Bois Recyclé', description: 'Créez des cadres photo uniques avec du bois récupéré.', category: 'recycle', image: 'images/cadre-photo.jpg' },
+      { date: '2024-09-08', name: 'Coussins Personnalisés', description: 'Cousez des coussins avec des motifs et tissus de votre choix.', category: 'craft', image: 'images/coussins.jpg' },
+      { date: '2024-09-03', name: 'Système d\'Arrosage Automatique', description: 'Installez un système pour arroser vos plantes automatiquement.', category: 'tech', image: 'images/arrosage-automatique.jpg' },
+    ];
+
     const insertQuery = `
-      INSERT INTO projects (date, name, description, category, image)
-      VALUES
-        ('2024-11-07', 'Projet IoT Innovant', 'Découvrez comment ce projet IoT peut transformer votre quotidien.', 'tech', 'projet-iot-exemple.jpg'),
-        ('2024-11-06', 'Atelier de Bricolage', 'Un projet de bricolage pour embellir votre espace de vie.', 'craft', 'atelier-bricolage.jpg'),
-        ('2024-11-03', 'Création d''un Jardin Vertical', 'Fabriquez un jardin vertical pour votre balcon ou intérieur.', 'garden', 'jardin-vertical.jpg'),
-        ('2024-11-01', 'Fabriquer sa Propre Table en Bois', 'Construisez une table en bois personnalisée pour votre maison.', 'woodwork', 'table-bois.jpg'),
-        ('2024-10-29', 'Réaliser des Bougies Maison', 'Apprenez à créer des bougies naturelles avec vos propres parfums.', 'craft', 'bougies-maison.jpg'),
-        ('2024-10-26', 'Robot Suiveur de Ligne', 'Assemblez un petit robot qui suit une ligne tracée au sol.', 'tech', 'robot-ligne.jpg'),
-        ('2024-10-23', 'Peinture sur Tissu', 'Personnalisez vos vêtements avec des motifs peints à la main.', 'art', 'peinture-tissu.jpg'),
-        ('2024-10-15', 'Lampe en Bouteille Recyclée', 'Transformez une bouteille en une lampe élégante.', 'recycle', 'lampe-bouteille.jpg'),
-        ('2024-10-11', 'Étagère Murale DIY', 'Créez une étagère murale design avec des matériaux simples.', 'woodwork', 'etagere-murale.jpg'),
-        ('2024-10-08', 'Fabriquer un Cerf-Volant', 'Construisez un cerf-volant pour profiter des journées venteuses.', 'craft', 'cerf-volant.jpg'),
-        ('2024-10-04', 'Enceinte Bluetooth Maison', 'Assemblez votre propre enceinte Bluetooth portable.', 'tech', 'enceinte-bluetooth.jpg'),
-        ('2024-10-01', 'Pots de Fleurs Peints', 'Donnez de la couleur à vos plantes avec des pots personnalisés.', 'art', 'pots-fleurs-peints.jpg'),
-        ('2024-09-28', 'Horloge Murale en Vinyle', 'Recyclez de vieux disques vinyles en horloges murales.', 'recycle', 'horloge-vinyle.jpg'),
-        ('2024-09-25', 'Fabriquer du Savon Naturel', 'Créez vos propres savons avec des ingrédients naturels.', 'craft', 'savon-naturel.jpg'),
-        ('2024-09-21', 'Station Météo Connectée', 'Construisez une station météo avec un microcontrôleur.', 'tech', 'station-meteo.jpg'),
-        ('2024-09-17', 'Décoration en Macramé', 'Apprenez l''art du macramé pour décorer votre intérieur.', 'craft', 'macrame.jpg'),
-        ('2024-09-14', 'Composteur de Jardin', 'Fabriquez un composteur pour recycler vos déchets organiques.', 'garden', 'composteur.jpg'),
-        ('2024-09-11', 'Cadre Photo en Bois Recyclé', 'Créez des cadres photo uniques avec du bois récupéré.', 'recycle', 'cadre-photo.jpg'),
-        ('2024-09-08', 'Coussins Personnalisés', 'Cousez des coussins avec des motifs et tissus de votre choix.', 'craft', 'coussins.jpg'),
-        ('2024-09-03', 'Système d''Arrosage Automatique', 'Installez un système pour arroser vos plantes automatiquement.', 'tech', 'arrosage-automatique.jpg')
+      INSERT INTO projects (date, name, description, category, image, userId)
+      VALUES (?, ?, ?, ?, ?, ?)
       ON CONFLICT(name, date, image) DO UPDATE SET
         description=excluded.description,
-        category=excluded.category
+        category=excluded.category,
+        userId=excluded.userId
     `;
 
-    db.run(insertQuery, function (err) {
-      if (err) {
-        console.error("Erreur lors de l'insertion ou la mise à jour des projets initiaux:", err.message);
-      } else {
-        console.log(`Insertion ou mise à jour des projets terminée. ${this.changes} lignes affectées.`);
-      }
+    db.serialize(() => {
+      const stmt = db.prepare(insertQuery);
+
+      projects.forEach(project => {
+        stmt.run([project.date, project.name, project.description, project.category, project.image, adminUserId], function(err) {
+          if (err) {
+            console.error("Erreur lors de l'insertion ou la mise à jour du projet:", err.message);
+          }
+        });
+      });
+
+      stmt.finalize(() => {
+        console.log("Insertion ou mise à jour des projets terminée.");
+      });
     });
-  });
-};
-
-// Fonction pour migrer la table comments
-const migrateCommentsTable = () => {
-  db.all(`PRAGMA table_info(comments)`, (err, columns) => {
-    if (err) {
-      console.error('Erreur lors de la vérification des colonnes de la table comments:', err.message);
-      return;
-    }
-
-    const hasUserIdColumn = columns.some((column) => column.name === 'userId');
-
-    if (!hasUserIdColumn) {
-      console.log("La colonne userId n'existe pas dans la table comments. Début de la migration.");
-
-      // Désactiver temporairement les contraintes de clés étrangères
-      db.run('PRAGMA foreign_keys = OFF', (err) => {
-        if (err) {
-          console.error('Erreur lors de la désactivation des clés étrangères:', err.message);
-          return;
-        }
-
-        // Renommer la table comments
-        db.run(`ALTER TABLE comments RENAME TO comments_old`, (err) => {
-          if (err) {
-            console.error('Erreur lors du renommage de la table comments:', err.message);
-            return;
-          }
-          console.log('Table comments renommée en comments_old.');
-
-          // Créer la nouvelle table avec la colonne userId
-          db.run(createTableCommentsQuery, (err) => {
-            if (err) {
-              console.error('Erreur lors de la création de la nouvelle table comments:', err.message);
-              return;
-            }
-            console.log('Nouvelle table comments créée avec la colonne userId.');
-
-            // Préparer l'insertion avec correspondance de username à userId
-            const insertCommentStmt = db.prepare(`
-              INSERT INTO comments (id, projectId, userId, comment, date)
-              VALUES (?, ?, ?, ?, ?)
-            `);
-
-            // Récupérer les données de l'ancienne table
-            db.all(`SELECT * FROM comments_old`, [], (err, rows) => {
-              if (err) {
-                console.error('Erreur lors de la récupération des données de comments_old:', err.message);
-                return;
-              }
-
-              async.eachSeries(
-                rows,
-                (row, callback) => {
-                  db.get(`SELECT id FROM users WHERE username = ?`, [row.username], (err, user) => {
-                    if (err) {
-                      console.error("Erreur lors de la récupération de l'userId:", err.message);
-                      return callback(err);
-                    }
-
-                    if (user) {
-                      // Insérer le commentaire avec le userId trouvé
-                      insertCommentStmt.run(row.id, row.projectId, user.id, row.comment, row.date, (err) => {
-                        if (err) {
-                          console.error("Erreur lors de l'insertion du commentaire migré:", err.message);
-                        }
-                        callback();
-                      });
-                    } else {
-                      console.warn(
-                        `Utilisateur ${row.username} non trouvé. Le commentaire ID ${row.id} ne sera pas migré.`
-                      );
-                      // Vous pouvez choisir de créer un utilisateur par défaut ici
-                      callback();
-                    }
-                  });
-                },
-                (err) => {
-                  insertCommentStmt.finalize();
-                  if (err) {
-                    console.error('Erreur lors de la migration des commentaires:', err.message);
-                  } else {
-                    console.log('Migration des commentaires terminée.');
-
-                    // Supprimer l'ancienne table comments_old
-                    db.run(`DROP TABLE comments_old`, (err) => {
-                      if (err) {
-                        console.error('Erreur lors de la suppression de la table comments_old:', err.message);
-                        return;
-                      }
-                      console.log('Table comments_old supprimée.');
-
-                      // Réactiver les clés étrangères
-                      db.run('PRAGMA foreign_keys = ON', (err) => {
-                        if (err) {
-                          console.error('Erreur lors de la réactivation des clés étrangères:', err.message);
-                          return;
-                        }
-                      });
-                    });
-                  }
-                }
-              );
-            });
-          });
-        });
-      });
-    } else {
-      console.log('La colonne userId existe déjà dans la table comments. Aucune migration nécessaire.');
-    }
-  });
-};
-
-// Fonction pour migrer la table comment_reactions
-const migrateCommentReactionsTable = () => {
-  db.all(`PRAGMA table_info(comment_reactions)`, (err, columns) => {
-    if (err) {
-      console.error('Erreur lors de la vérification des colonnes de la table comment_reactions:', err.message);
-      return;
-    }
-
-    const hasUserIdColumn = columns.some((column) => column.name === 'userId');
-
-    if (!hasUserIdColumn) {
-      console.log("La colonne userId n'existe pas dans la table comment_reactions. Début de la migration.");
-
-      // Désactiver temporairement les contraintes de clés étrangères
-      db.run('PRAGMA foreign_keys = OFF', (err) => {
-        if (err) {
-          console.error('Erreur lors de la désactivation des clés étrangères:', err.message);
-          return;
-        }
-
-        // Renommer la table comment_reactions
-        db.run(`ALTER TABLE comment_reactions RENAME TO comment_reactions_old`, (err) => {
-          if (err) {
-            console.error('Erreur lors du renommage de la table comment_reactions:', err.message);
-            return;
-          }
-          console.log('Table comment_reactions renommée en comment_reactions_old.');
-
-          // Créer la nouvelle table avec la colonne userId
-          db.run(createTableCommentReactionsQuery, (err) => {
-            if (err) {
-              console.error('Erreur lors de la création de la nouvelle table comment_reactions:', err.message);
-              return;
-            }
-            console.log('Nouvelle table comment_reactions créée avec la colonne userId.');
-
-            // Préparer l'insertion avec correspondance de username à userId
-            const insertReactionStmt = db.prepare(`
-              INSERT INTO comment_reactions (id, comment_id, userId, emoji, date)
-              VALUES (?, ?, ?, ?, ?)
-            `);
-
-            // Récupérer les données de l'ancienne table
-            db.all(`SELECT * FROM comment_reactions_old`, [], (err, rows) => {
-              if (err) {
-                console.error('Erreur lors de la récupération des données de comment_reactions_old:', err.message);
-                return;
-              }
-
-              async.eachSeries(
-                rows,
-                (row, callback) => {
-                  db.get(`SELECT id FROM users WHERE username = ?`, [row.username], (err, user) => {
-                    if (err) {
-                      console.error("Erreur lors de la récupération de l'userId:", err.message);
-                      return callback(err);
-                    }
-
-                    if (user) {
-                      // Insérer la réaction avec le userId trouvé
-                      insertReactionStmt.run(row.id, row.comment_id, user.id, row.emoji, row.date, (err) => {
-                        if (err) {
-                          console.error("Erreur lors de l'insertion de la réaction migrée:", err.message);
-                        }
-                        callback();
-                      });
-                    } else {
-                      console.warn(
-                        `Utilisateur ${row.username} non trouvé. La réaction ID ${row.id} ne sera pas migrée.`
-                      );
-                      // Vous pouvez choisir de créer un utilisateur par défaut ici
-                      callback();
-                    }
-                  });
-                },
-                (err) => {
-                  insertReactionStmt.finalize();
-                  if (err) {
-                    console.error('Erreur lors de la migration des réactions:', err.message);
-                  } else {
-                    console.log('Migration des réactions terminée.');
-
-                    // Supprimer l'ancienne table comment_reactions_old
-                    db.run(`DROP TABLE comment_reactions_old`, (err) => {
-                      if (err) {
-                        console.error('Erreur lors de la suppression de la table comment_reactions_old:', err.message);
-                        return;
-                      }
-                      console.log('Table comment_reactions_old supprimée.');
-
-                      // Réactiver les clés étrangères
-                      db.run('PRAGMA foreign_keys = ON', (err) => {
-                        if (err) {
-                          console.error('Erreur lors de la réactivation des clés étrangères:', err.message);
-                          return;
-                        }
-                      });
-                    });
-                  }
-                }
-              );
-            });
-          });
-        });
-      });
-    } else {
-      console.log('La colonne userId existe déjà dans la table comment_reactions. Aucune migration nécessaire.');
-    }
   });
 };
 
@@ -537,24 +379,25 @@ function generateSalt(length = 16) {
 }
 
 // Fonction pour créer l'utilisateur admin s'il n'existe pas
-const createAdminUser = () => {
+const createAdminUser = (callback) => {
   const adminUsername = process.env.ADMIN_USERNAME;
   const adminPassword = process.env.ADMIN_PASSWORD;
   const adminEmail = process.env.ADMIN_EMAIL;
 
   if (!adminUsername || !adminPassword || !adminEmail) {
     console.warn("Les informations de l'admin ne sont pas entièrement définies dans les variables d'environnement.");
-    return;
+    return callback(new Error("Informations d'admin manquantes"));
   }
 
   db.get(`SELECT * FROM users WHERE username = ?`, [adminUsername], (err, row) => {
     if (err) {
       console.error("Erreur lors de la vérification de l'utilisateur admin:", err.message);
-      return;
+      return callback(err);
     }
 
     if (row) {
       console.log('Utilisateur admin déjà existant.');
+      return callback(null, row.id);
     } else {
       const salt = generateSalt();
       const hashedPassword = hashPassword(adminPassword, salt);
@@ -565,8 +408,10 @@ const createAdminUser = () => {
         function (err) {
           if (err) {
             console.error("Erreur lors de la création de l'utilisateur admin:", err.message);
+            return callback(err);
           } else {
             console.log('Utilisateur admin créé avec succès.');
+            return callback(null, this.lastID);
           }
         }
       );
@@ -574,13 +419,24 @@ const createAdminUser = () => {
   });
 };
 
+// Middleware pour vérifier si l'utilisateur est authentifié
+function isAuthenticated(req, res, next) {
+  if (req.session.userId) {
+    return next();
+  } else {
+    res.redirect('/login');
+  }
+}
+
 // Routes
 
 // Route principale
 app.get('/', (req, res) => {
   // Récupérer les deux projets les plus récents
   const recentProjectsQuery = `
-    SELECT * FROM projects
+    SELECT projects.*, users.username
+    FROM projects
+    JOIN users ON projects.userId = users.id
     ORDER BY date DESC
     LIMIT 2
   `;
@@ -607,7 +463,12 @@ app.get('/about', (req, res) => {
 
 // Route pour les projets
 app.get('/projets', (req, res) => {
-  const query = `SELECT * FROM projects ORDER BY date DESC`;
+  const query = `
+    SELECT projects.*, users.username
+    FROM projects
+    JOIN users ON projects.userId = users.id
+    ORDER BY date DESC
+  `;
   const categoriesQuery = `SELECT DISTINCT category FROM projects`;
 
   db.serialize(() => {
@@ -640,12 +501,51 @@ app.get('/projets', (req, res) => {
   });
 });
 
+
+// Route GET pour afficher le formulaire d'ajout de projet
+app.get('/projets/ajouter', isAuthenticated, (req, res) => {
+  res.render('createProject', { title: 'Ajouter un Projet', username: req.session.username });
+});
+
+// Route POST pour traiter la soumission du formulaire d'ajout de projet
+// Route POST pour traiter la soumission du formulaire d'ajout de projet
+app.post('/projets/ajouter', isAuthenticated, upload.single('image'), (req, res) => {
+  const { name, description, category } = req.body;
+  const userId = req.session.userId;
+  const date = new Date().toISOString();
+  const image = req.file ? `uploads/${req.file.filename}` : null;
+
+  if (!name || !description || !category) {
+    return res.status(400).send('Tous les champs sont requis');
+  }
+
+  const insertProjectQuery = `
+    INSERT INTO projects (date, name, description, category, image, userId)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `;
+
+  db.run(insertProjectQuery, [date, name, description, category, image, userId], function (err) {
+    if (err) {
+      console.error("Erreur lors de l'insertion du projet:", err.message);
+      return res.status(500).send("Erreur lors de l'ajout du projet.");
+    } else {
+      res.redirect(`/projets/${this.lastID}`);
+    }
+  });
+});
+
+
 // Route pour le détail d'un projet
 app.get('/projets/:id', (req, res) => {
   const projectId = req.params.id;
 
   // Requête pour récupérer les détails du projet
-  const projectQuery = `SELECT * FROM projects WHERE id = ?`;
+  const projectQuery = `
+    SELECT projects.*, users.username
+    FROM projects
+    JOIN users ON projects.userId = users.id
+    WHERE projects.id = ?
+  `;
 
   // Requête pour récupérer les commentaires liés à ce projet avec le username
   const commentsQuery = `
@@ -920,6 +820,7 @@ app.post('/react/:commentId', (req, res) => {
     }
   });
 });
+
 
 // Démarrage du serveur avec port configurable via variable d'environnement
 const PORT = process.env.PORT || 5010;

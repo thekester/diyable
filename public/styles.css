@@ -873,6 +873,11 @@ form .form-footer a:hover {
   }
 }
 
-#loginForm, #registerForm, #contact, #about, .project-detail {
+#loginForm, #registerForm, #contact, #about, .project-detail, #titleCreate {
   margin-top: 10%;
+}
+
+#titleCreate
+{
+  text-align: center;
 }

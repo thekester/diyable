@@ -1,11 +1,11 @@
-//- projectDetails.pug
+//- projectDetail.pug
 
 extends layout
 
 block content
   section.project-detail
     h1= project.name
-    img(src=`/images/${project.image}` alt=`${project.name}`)
+    img(src=`/${project.image}` alt=`${project.name}`)
     p Date de création: #{new Date(project.date).toLocaleDateString('fr-FR')}
     p= project.description
     p Catégorie: #{project.category}
