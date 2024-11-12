@@ -825,6 +825,74 @@ app.get('/logout', (req, res) => {
   });
 });
 
+// Route pour afficher le profil de l'utilisateur
+app.get('/profile', (req, res) => {
+  // Vérifier si l'utilisateur est connecté
+  if (!req.session.username) {
+    return res.redirect('/login');  // Redirection vers la page de connexion si l'utilisateur n'est pas connecté
+  }
+
+  // Récupérer les données de l'utilisateur depuis la base de données
+  db.get(`SELECT * FROM users WHERE id = ?`, [req.session.userId], (err, row) => {
+    if (err) {
+      return res.status(500).send('Erreur du serveur');
+    }
+    if (row) {
+      // Renvoyer la vue 'profile' avec les données de l'utilisateur
+      res.render('profile', {
+        title: 'Mon Profil',
+        username: row.username,
+        email: row.email
+      });
+    } else {
+      return res.status(404).send('Utilisateur non trouvé');
+    }
+  });
+});
+
+// Route pour gérer le changement de mot de passe
+app.post('/change-password', (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  const userId = req.session.userId;
+
+  if (!currentPassword || !newPassword) {
+    return res.json({ success: false, message: 'Tous les champs sont requis' });
+  }
+
+  // Récupérer l'utilisateur actuel
+  db.get('SELECT * FROM users WHERE id = ?', [userId], (err, row) => {
+    if (err) {
+      return res.json({ success: false, message: 'Erreur du serveur' });
+    }
+    
+    if (!row) {
+      return res.json({ success: false, message: 'Utilisateur non trouvé' });
+    }
+
+    // Vérification du mot de passe actuel
+    const hashedCurrentPassword = hashPassword(currentPassword, row.salt);
+    if (hashedCurrentPassword !== row.password) {
+      return res.json({ success: false, message: 'Mot de passe actuel incorrect' });
+    }
+
+    // Mise à jour du mot de passe
+    const salt = generateSalt();
+    const hashedNewPassword = hashPassword(newPassword, salt);
+
+    db.run(
+      `UPDATE users SET password = ?, salt = ? WHERE id = ?`,
+      [hashedNewPassword, salt, userId],
+      function (err) {
+        if (err) {
+          return res.json({ success: false, message: 'Erreur du serveur' });
+        } else {
+          return res.json({ success: true, message: 'Mot de passe mis à jour avec succès' });
+        }
+      }
+    );
+  });
+});
+
 // Route pour soumettre un commentaire
 app.post('/comments', (req, res) => {
   if (!req.session.userId) {

@@ -1,0 +1,28 @@
+extends layout
+
+block content
+  section.text
+    .profile-container
+        h1 Mon Profil
+        .profile-info
+        p
+            strong Nom d'utilisateur :
+            | #{username}
+        p
+            strong Email :
+            | #{email}
+
+        form(id="changePasswordForm", method="POST")
+            h2 Changement de mot de passe
+            div
+            label(for="currentPassword") Mot de passe actuel
+            input(type="password", id="currentPassword", name="currentPassword", required)
+            div
+            label(for="newPassword") Nouveau mot de passe
+            input(type="password", id="newPassword", name="newPassword", required)
+            div
+            button(type="submit") Changer le mot de passe
+            div#notification.notification
+
+block scripts
+  script(src="/script.js")

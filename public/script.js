@@ -229,6 +229,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   const loginForm = document.getElementById('loginForm');
   const registerForm = document.getElementById('registerForm');
+  const changePasswordForm = document.getElementById('changePasswordForm');
 
   if (loginForm) {
     loginForm.addEventListener('submit', function (event) {
@@ -296,4 +297,36 @@ document.addEventListener('DOMContentLoaded', function () {
       });
     });
   }  
+  
+  if (changePasswordForm) {
+    changePasswordForm.addEventListener('submit', function (event) {
+      event.preventDefault();
+
+      const formData = new FormData(changePasswordForm);
+      const data = {
+        currentPassword: formData.get('currentPassword'),
+        newPassword: formData.get('newPassword')
+      };
+
+      fetch('/change-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          toastr.success(data.message);  // Affiche le message de succès
+        } else {
+          toastr.error(data.message);  // Affiche l'erreur avec Toastr
+        }
+      })
+      .catch(error => {
+        toastr.error('Une erreur est survenue.');
+        console.error('Erreur réseau:', error);
+      });
+    });
+  }
 });
