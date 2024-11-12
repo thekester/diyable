@@ -9,12 +9,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Vérifiez que les boutons existent avant de tenter d'accéder à leurs propriétés
   if (filterButtons && filterButtons.length > 0) {
-    filterButtons.forEach(button => {
+    filterButtons.forEach((button) => {
       button.addEventListener('click', function () {
         const category = this.dataset.category;
 
         // Gestion de la classe active
-        filterButtons.forEach(btn => btn.classList.remove('active'));
+        filterButtons.forEach((btn) => btn.classList.remove('active'));
         this.classList.add('active');
 
         // Compteur pour les projets visibles
@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Vérifiez que les cartes existent également
         if (projectCards && projectCards.length > 0) {
-          projectCards.forEach(card => {
+          projectCards.forEach((card) => {
             const cardCategory = card.dataset.category ? card.dataset.category.toLowerCase() : '';
 
             if (category === 'all') {
@@ -59,7 +59,7 @@ document.addEventListener('DOMContentLoaded', function () {
       });
     });
   } else {
-    console.warn("Aucun bouton de filtre trouvé sur la page.");
+    console.warn('Aucun bouton de filtre trouvé sur la page.');
   }
 
   // Exemple d'effet de clic sur le bouton héro
@@ -73,50 +73,33 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     });
   } else {
-    console.warn("Aucun bouton héro trouvé sur la page.");
+    console.warn('Aucun bouton héro trouvé sur la page.');
   }
-
- 
-
 
   // Gestion de l'affichage des commentaires des projets
   const commentForm = document.getElementById('commentForm');
   if (commentForm) {
-    commentForm.addEventListener('submit', async function(event) {
+    commentForm.addEventListener('submit', function (event) {
+      // Pas de prévention de l'action par défaut ici, car le formulaire sera soumis et la page rechargée
+      // Si vous souhaitez gérer l'envoi du formulaire en AJAX, vous pouvez décommenter les lignes ci-dessous
+      /*
       event.preventDefault(); // Empêche la soumission classique du formulaire
       const formData = new FormData(this);
-      const response = await fetch(this.action, {
+      fetch(this.action, {
         method: 'POST',
         body: formData
-      });
-      if (response.ok) {
-        const projectId = formData.get('projectId');
-        const newComments = await fetch(`/comments/${projectId}`).then(res => res.json());
-        const commentList = document.querySelector('.comment-list');
-        commentList.innerHTML = ''; // Nettoie la liste des commentaires
-        newComments.forEach(comment => {
-          const commentDiv = document.createElement('div');
-          commentDiv.classList.add('comment');
-          commentDiv.innerHTML = `
-            <div class="comment-header">
-              <strong class="comment-username">${comment.username}</strong>
-              <span class="comment-date">${new Date(comment.date).toLocaleDateString('fr-FR')}</span>
-            </div>
-            <div class="comment-body comment-box">
-              <p>${comment.comment}</p>
-            </div>
-            <div class="reactions">
-              ${renderReactions(comment)}
-            </div>
-          `;
-          commentList.appendChild(commentDiv);
+      })
+        .then((response) => {
+          if (response.ok) {
+            // Gérer la mise à jour des commentaires sans recharger la page
+          } else {
+            alert("Erreur lors de l'envoi du commentaire.");
+          }
+        })
+        .catch((error) => {
+          console.error('Erreur réseau:', error);
         });
-        // Attacher les événements aux nouveaux boutons de réaction
-        attachReactionEventListeners();
-        this.reset(); // Réinitialise le formulaire
-      } else {
-        alert('Erreur lors de l\'envoi du commentaire.');
-      }
+      */
     });
   }
 
@@ -130,42 +113,42 @@ document.addEventListener('DOMContentLoaded', function () {
     fetch(`/react/${commentId}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ emoji })
+      body: JSON.stringify({ emoji }),
     })
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        // Mettre à jour le compteur de réactions sans recharger la page
-        const count = data.updatedCount;
-        button.querySelector('.reaction-count').textContent = count;
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) {
+          // Mettre à jour le compteur de réactions sans recharger la page
+          const count = data.updatedCount;
+          button.querySelector('.reaction-count').textContent = count;
 
-        // Gérer l'état actif du bouton pour indiquer que l'utilisateur a réagi ou non
-        if (data.userHasReacted) {
-          button.classList.add('reacted');
+          // Gérer l'état actif du bouton pour indiquer que l'utilisateur a réagi ou non
+          if (data.userHasReacted) {
+            button.classList.add('reacted');
+          } else {
+            button.classList.remove('reacted');
+          }
         } else {
-          button.classList.remove('reacted');
+          console.error('Erreur lors de la mise à jour de la réaction.', data.message);
         }
-      } else {
-        console.error('Erreur lors de la mise à jour de la réaction.', data.message);
-      }
-    })
-    .catch(error => {
-      console.error('Erreur réseau:', error);
-    });
+      })
+      .catch((error) => {
+        console.error('Erreur réseau:', error);
+      });
   }
 
   // Fonction pour rendre les boutons de réaction et attacher les événements
   function renderReactions(comment) {
     const reactions = ['👍', '💩', '❤️', '😂'];
     let html = '';
-    reactions.forEach(emoji => {
+    reactions.forEach((emoji) => {
       const count = comment.reactions && comment.reactions[emoji] ? comment.reactions[emoji] : 0;
       html += `<button
-        type="button"
-        class="reaction-button"
-        data-comment-id="${comment.id}"
-        data-emoji="${emoji}"
-      >${emoji} <span class="reaction-count">${count}</span></button> `;
+          type="button"
+          class="reaction-button"
+          data-comment-id="${comment.id}"
+          data-emoji="${emoji}"
+        >${emoji} <span class="reaction-count">${count}</span></button> `;
     });
     return html;
   }
@@ -173,41 +156,33 @@ document.addEventListener('DOMContentLoaded', function () {
   // Attacher les événements aux boutons de réaction
   function attachReactionEventListeners() {
     const reactionButtons = document.querySelectorAll('.reaction-button');
-    reactionButtons.forEach(button => {
+    reactionButtons.forEach((button) => {
       button.addEventListener('click', reactToComment);
     });
   }
 
   // Appeler la fonction pour attacher les événements après le chargement initial
   attachReactionEventListeners();
-});
 
-
- // Fonction pour basculer l'affichage du menu déroulant
-function toggleDropdown(event) {
-  event.stopPropagation(); // Empêche la propagation de l'événement pour éviter de fermer le menu immédiatement
-  console.log('toggleDropdown a été appelé'); // Pour débogage
-  const dropdownMenu = document.getElementById('dropdownMenu');
-  if (dropdownMenu.classList.contains('show')) {
-    dropdownMenu.classList.remove('show'); // Cache le menu
-  } else {
-    dropdownMenu.classList.add('show'); // Affiche le menu
+  // Fonction pour basculer l'affichage du menu déroulant
+  function toggleDropdown(event) {
+    event.stopPropagation(); // Empêche la propagation de l'événement pour éviter de fermer le menu immédiatement
+    const dropdownMenu = document.getElementById('dropdownMenu');
+    if (dropdownMenu) {
+      dropdownMenu.classList.toggle('show'); // Bascule l'affichage du menu
+    }
   }
-}
 
-// Fonctionnalité du menu déroulant pour le nom d'utilisateur
-const usernameDropdown = document.getElementById('usernameDropdown');
-if (usernameDropdown) {
-  console.log('Élément usernameDropdown trouvé'); // Pour débogage
-  usernameDropdown.addEventListener('click', toggleDropdown);
-} else {
-  console.warn('Élément usernameDropdown non trouvé');
-}
-
+  // Fonctionnalité du menu déroulant pour le nom d'utilisateur
+  const usernameDropdown = document.getElementById('usernameDropdown');
+  if (usernameDropdown) {
+    usernameDropdown.addEventListener('click', toggleDropdown);
+  } else {
+    console.warn('Élément usernameDropdown non trouvé');
+  }
 
   // Fermer le menu si l'utilisateur clique en dehors de celui-ci
-  /*
-  window.addEventListener('click', function(event) {
+  window.addEventListener('click', function (event) {
     const dropdownMenu = document.getElementById('dropdownMenu');
     if (
       dropdownMenu &&
@@ -217,4 +192,5 @@ if (usernameDropdown) {
     ) {
       dropdownMenu.classList.remove('show'); // Cache le menu si on clique ailleurs
     }
-  });*/
+  });
+});

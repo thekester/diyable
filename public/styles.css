@@ -873,6 +873,6 @@ form .form-footer a:hover {
   }
 }
 
-#loginForm, #registerForm, #contact, #about {
+#loginForm, #registerForm, #contact, #about, .project-detail {
   margin-top: 10%;
 }
