@@ -755,12 +755,12 @@ app.post('/login', (req, res) => {
 
   // Validation des entrées
   if (!username || !password) {
-    return res.status(400).send('Tous les champs sont requis');
+    res.json({ success: false, message: 'Tous les champs sont requis'});
   }
 
   db.get(`SELECT * FROM users WHERE username = ?`, [username], (err, row) => {
     if (err) {
-      res.status(500).send('Erreur du serveur');
+      res.json({ success: false, message: 'Erreur du serveur' });
     } else if (row) {
       // Utilisateur trouvé, vérification du mot de passe
       const hashedPassword = hashPassword(password, row.salt);
@@ -768,12 +768,12 @@ app.post('/login', (req, res) => {
         // Stocker l'utilisateur dans la session
         req.session.username = username;
         req.session.userId = row.id; // Stocker l'ID de l'utilisateur
-        res.redirect('/');
+        res.json({ success: true });
       } else {
-        res.status(401).send('Mot de passe incorrect');
+        res.json({ success: false, message: 'Mot de passe incorrect' });
       }
     } else {
-      res.status(404).send('Utilisateur non trouvé');
+      res.json({ success: false, message: 'Utilisateur non trouvé' });
     }
   });
 });
@@ -790,7 +790,7 @@ app.post('/register', (req, res) => {
 
   // Validation des entrées
   if (!username || !email || !password) {
-    return res.status(400).send('Tous les champs sont requis');
+    return res.json({ success: false, message: 'Tous les champs sont requis' });
   }
 
   const salt = generateSalt();
@@ -802,19 +802,18 @@ app.post('/register', (req, res) => {
     [username, email, hashedPassword, salt],
     function (err) {
       if (err) {
-        console.error("Erreur lors de l'insertion :", err);
         if (err.code === 'SQLITE_CONSTRAINT') {
-          res.status(409).send("Nom d'utilisateur ou email déjà pris");
+          res.json({ success: false, message: 'Nom d\'utilisateur ou email déjà pris' });
         } else {
-          res.status(500).send('Erreur du serveur');
+          res.json({ success: false, message: 'Erreur du serveur' });
         }
       } else {
-        res.send('Compte créé avec succès');
-        res.redirect('/');
+        res.json({ success: true, message: 'Compte créé avec succès' });
       }
     }
   );
 });
+
 
 // Route pour la déconnexion
 app.get('/logout', (req, res) => {
@@ -942,12 +941,9 @@ app.post('/react/:commentId', (req, res) => {
 
 // Route pour supprimer un commentaire, avec suppression des réactions associées
 app.delete('/comments/:id', (req, res) => {
-  console.log('Requête reçue pour suppression du commentaire avec ID:', req.params.id);
   const commentId = req.params.id;
   const userId = req.session.userId; // ID de l'utilisateur connecté
   const adminUsername = process.env.ADMIN_USERNAME; // Nom d'utilisateur admin défini dans .env
-  console.log('Utilisateur connecté ID:', userId);
-
 
   if (!userId) {
     return res.status(403).send('Vous devez être connecté pour supprimer des commentaires.');

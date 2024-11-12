@@ -211,4 +211,89 @@ document.addEventListener('DOMContentLoaded', function () {
       dropdownMenu.classList.remove('show'); // Cache le menu si on clique ailleurs
     }
   });
+
+  function showNotification(type, message) {
+    const notification = document.getElementById('notification');
+    notification.textContent = message;
+    notification.className = 'notification'; // Réinitialiser les classes
+    if (type === 'success') {
+      notification.classList.add('success');
+    }
+    notification.style.display = 'block';
+
+    // Masquer la notification après 3 secondes
+    setTimeout(() => {
+      notification.style.display = 'none';
+    }, 3000);
+  }
+
+  const loginForm = document.getElementById('loginForm');
+  const registerForm = document.getElementById('registerForm');
+
+  if (loginForm) {
+    loginForm.addEventListener('submit', function (event) {
+      event.preventDefault();
+
+      const formData = new FormData(loginForm);
+      const data = {
+        username: formData.get('username'),
+        password: formData.get('password')
+      };
+
+      fetch('/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          showNotification('success', 'Connexion réussie !');
+          window.location.href = '/';
+        } else {
+          showNotification('error', data.message); // Affiche l'erreur avec Toastr
+        }
+      })
+      .catch(error => {
+        showNotification('error', 'Une erreur est survenue.');
+        console.error('Erreur réseau:', error);
+      });
+    });
+  }
+
+  if (registerForm) {
+    registerForm.addEventListener('submit', function (event) {
+      event.preventDefault();
+  
+      const formData = new FormData(registerForm);
+      const data = {
+        username: formData.get('username'),
+        email: formData.get('email'),
+        password: formData.get('password')
+      };
+  
+      fetch('/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          showNotification('success', data.message);  // Affiche une notification de succès
+          window.location.href = '/login';  // Redirige vers la page de connexion
+        } else {
+          showNotification('error', data.message);  // Affiche l'erreur
+        }
+      })
+      .catch(error => {
+        showNotification('error', 'Une erreur est survenue.');
+        console.error('Erreur réseau:', error);
+      });
+    });
+  }  
 });

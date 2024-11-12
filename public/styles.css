@@ -453,6 +453,21 @@ form .form-footer a:hover {
   color: #0056b3;
 }
 
+.notification {
+  position: fixed;
+  top: 120px;
+  right: 20px;
+  background-color: #f44336; /* Rouge pour les erreurs */
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  display: none;
+  z-index: 1000;
+}
+.notification.success {
+  background-color: #4CAF50; /* Vert pour le succès */
+}
+
 /* Styles pour le menu déroulant */
 #dropdownMenu {
   display: none; /* Le menu est caché par défaut */
