@@ -80,6 +80,16 @@ diyable/
 To use a specific address for the diyable app you can set the PORT var in the .env like that: PORT=5133 for example
 With that you can easily set the address for the app in order to modify easily the port to avoid the following error Error: listen EADDRINUSE: address already in use :::5136
 
+```txt
+PORT=<Your_PORT>>
+SESSION_SECRET=<Your_SESSION_SECRET>
+
+ADMIN_USERNAME=<Your_ADMIN_USERNAME>
+ADMIN_PASSWORD=<Your_ADMIN_PASSWORD>
+ADMIN_EMAIL=<Your_ADMIN_EMAIL>
+```
+
+
 ## Docker Configuration
 
 1. **Build Docker Image**:
