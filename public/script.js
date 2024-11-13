@@ -80,6 +80,26 @@ document.addEventListener('DOMContentLoaded', function () {
   const commentForm = document.getElementById('commentForm');
   if (commentForm) {
     commentForm.addEventListener('submit', function (event) {
+      // Pas de prévention de l'action par défaut ici, car le formulaire sera soumis et la page rechargée
+      // Si vous souhaitez gérer l'envoi du formulaire en AJAX, vous pouvez décommenter les lignes ci-dessous
+      /*
+      event.preventDefault(); // Empêche la soumission classique du formulaire
+      const formData = new FormData(this);
+      fetch(this.action, {
+        method: 'POST',
+        body: formData
+      })
+        .then((response) => {
+          if (response.ok) {
+            // Gérer la mise à jour des commentaires sans recharger la page
+          } else {
+            alert("Erreur lors de l'envoi du commentaire.");
+          }
+        })
+        .catch((error) => {
+          console.error('Erreur réseau:', error);
+        });
+      */
     });
   }
 
@@ -115,6 +135,22 @@ document.addEventListener('DOMContentLoaded', function () {
       .catch((error) => {
         console.error('Erreur réseau:', error);
       });
+  }
+
+  // Fonction pour rendre les boutons de réaction et attacher les événements
+  function renderReactions(comment) {
+    const reactions = ['👍', '💩', '❤️', '😂'];
+    let html = '';
+    reactions.forEach((emoji) => {
+      const count = comment.reactions && comment.reactions[emoji] ? comment.reactions[emoji] : 0;
+      html += `<button
+          type="button"
+          class="reaction-button"
+          data-comment-id="${comment.id}"
+          data-emoji="${emoji}"
+        >${emoji} <span class="reaction-count">${count}</span></button> `;
+    });
+    return html;
   }
 
   // Attacher les événements aux boutons de réaction
@@ -176,10 +212,8 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  // Appeler la fonction après le chargement du contenu
+  // Appeler les fonctions après le chargement du contenu
   attachDeleteEventListeners();
-
-  // Appeler la fonction pour attacher les événements après le chargement initial
   attachReactionEventListeners();
 
   // Fonction pour basculer l'affichage du menu déroulant
@@ -254,7 +288,7 @@ document.addEventListener('DOMContentLoaded', function () {
           showNotification('success', 'Connexion réussie !');
           window.location.href = '/';
         } else {
-          showNotification('error', data.message); // Affiche l'erreur avec Toastr
+          showNotification('error', data.message); // Affiche l'erreur
         }
       })
       .catch(error => {
@@ -318,13 +352,13 @@ document.addEventListener('DOMContentLoaded', function () {
       .then(response => response.json())
       .then(data => {
         if (data.success) {
-          toastr.success(data.message);  // Affiche le message de succès
+          showNotification('success', data.message);  // Affiche le message de succès
         } else {
-          toastr.error(data.message);  // Affiche l'erreur avec Toastr
+          showNotification('error', data.message);  // Affiche l'erreur
         }
       })
       .catch(error => {
-        toastr.error('Une erreur est survenue.');
+        showNotification('error', 'Une erreur est survenue.');
         console.error('Erreur réseau:', error);
       });
     });

@@ -12,7 +12,6 @@ const multer = require('multer'); // Importer multer pour la gestion des téléc
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use('/images', express.static(path.join(__dirname, 'assets', 'images')));
 
 // Configuration de la session
 app.use(
@@ -461,6 +460,21 @@ app.get('/about', (req, res) => {
   res.render('about', { title: 'À Propos' });
 });
 
+// Route vers les conditions d'utilisation
+app.get('/terms-of-service', (req, res) => {
+  res.render('terms-of-service', { title: 'Conditions d\'utilisation' });
+});
+
+// Route pour la politique de confidentialité
+app.get('/privacy-policy', (req, res) => {
+  res.render('privacy-policy', { title: 'Politique de Confidentialité' });
+});
+
+// Route pour les mentions légales
+app.get('/legal-info', (req, res) => {
+  res.render('legal-info', { title: 'Mentions Légales' });
+});
+
 // Route pour les projets
 app.get('/projets', (req, res) => {
   const query = `
@@ -535,6 +549,7 @@ app.post('/projets/ajouter', isAuthenticated, upload.single('image'), (req, res)
 // Route pour le détail d'un projet
 app.get('/projets/:id', (req, res) => {
   const projectId = req.params.id;
+  const userId = req.session.userId;
 
   // Requête pour récupérer les détails du projet
   const projectQuery = `
@@ -578,6 +593,7 @@ app.get('/projets/:id', (req, res) => {
           comments: [],
           projectId,
           username: req.session.username,
+          currentUserId: userId,
         });
       }
 
@@ -617,6 +633,7 @@ app.get('/projets/:id', (req, res) => {
           comments,
           projectId,
           username: req.session.username,
+          currentUserId: userId,
         });
       });
     });
@@ -634,12 +651,12 @@ app.post('/login', (req, res) => {
 
   // Validation des entrées
   if (!username || !password) {
-    return res.status(400).send('Tous les champs sont requis');
+    res.json({ success: false, message: 'Tous les champs sont requis' });
   }
 
   db.get(`SELECT * FROM users WHERE username = ?`, [username], (err, row) => {
     if (err) {
-      res.status(500).send('Erreur du serveur');
+      res.json({ success: false, message: 'Erreur du serveur' });
     } else if (row) {
       // Utilisateur trouvé, vérification du mot de passe
       const hashedPassword = hashPassword(password, row.salt);
@@ -647,12 +664,12 @@ app.post('/login', (req, res) => {
         // Stocker l'utilisateur dans la session
         req.session.username = username;
         req.session.userId = row.id; // Stocker l'ID de l'utilisateur
-        res.redirect('/');
+        res.json({ success: true });
       } else {
-        res.status(401).send('Mot de passe incorrect');
+        res.json({ success: false, message: 'Mot de passe incorrect' });
       }
     } else {
-      res.status(404).send('Utilisateur non trouvé');
+      res.json({ success: false, message: 'Utilisateur non trouvé' });
     }
   });
 });
@@ -669,7 +686,7 @@ app.post('/register', (req, res) => {
 
   // Validation des entrées
   if (!username || !email || !password) {
-    return res.status(400).send('Tous les champs sont requis');
+    return res.json({ success: false, message: 'Tous les champs sont requis' });
   }
 
   const salt = generateSalt();
@@ -681,14 +698,13 @@ app.post('/register', (req, res) => {
     [username, email, hashedPassword, salt],
     function (err) {
       if (err) {
-        console.error("Erreur lors de l'insertion :", err);
         if (err.code === 'SQLITE_CONSTRAINT') {
-          res.status(409).send("Nom d'utilisateur ou email déjà pris");
+          res.json({ success: false, message: 'Nom d\'utilisateur ou email déjà pris' });
         } else {
-          res.status(500).send('Erreur du serveur');
+          res.json({ success: false, message: 'Erreur du serveur' });
         }
       } else {
-        res.send('Compte créé avec succès');
+        res.json({ success: true, message: 'Compte créé avec succès' });
       }
     }
   );
@@ -701,6 +717,74 @@ app.get('/logout', (req, res) => {
       return res.status(500).send('Erreur lors de la déconnexion');
     }
     res.redirect('/'); // Rediriger vers la page d'accueil après déconnexion
+  });
+});
+
+// Route pour afficher le profil de l'utilisateur
+app.get('/profile', (req, res) => {
+  // Vérifier si l'utilisateur est connecté
+  if (!req.session.username) {
+    return res.redirect('/login'); // Redirection vers la page de connexion si l'utilisateur n'est pas connecté
+  }
+
+  // Récupérer les données de l'utilisateur depuis la base de données
+  db.get(`SELECT * FROM users WHERE id = ?`, [req.session.userId], (err, row) => {
+    if (err) {
+      return res.status(500).send('Erreur du serveur');
+    }
+    if (row) {
+      // Renvoyer la vue 'profile' avec les données de l'utilisateur
+      res.render('profile', {
+        title: 'Mon Profil',
+        username: row.username,
+        email: row.email,
+      });
+    } else {
+      return res.status(404).send('Utilisateur non trouvé');
+    }
+  });
+});
+
+// Route pour gérer le changement de mot de passe
+app.post('/change-password', (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  const userId = req.session.userId;
+
+  if (!currentPassword || !newPassword) {
+    return res.json({ success: false, message: 'Tous les champs sont requis' });
+  }
+
+  // Récupérer l'utilisateur actuel
+  db.get('SELECT * FROM users WHERE id = ?', [userId], (err, row) => {
+    if (err) {
+      return res.json({ success: false, message: 'Erreur du serveur' });
+    }
+
+    if (!row) {
+      return res.json({ success: false, message: 'Utilisateur non trouvé' });
+    }
+
+    // Vérification du mot de passe actuel
+    const hashedCurrentPassword = hashPassword(currentPassword, row.salt);
+    if (hashedCurrentPassword !== row.password) {
+      return res.json({ success: false, message: 'Mot de passe actuel incorrect' });
+    }
+
+    // Mise à jour du mot de passe
+    const salt = generateSalt();
+    const hashedNewPassword = hashPassword(newPassword, salt);
+
+    db.run(
+      `UPDATE users SET password = ?, salt = ? WHERE id = ?`,
+      [hashedNewPassword, salt, userId],
+      function (err) {
+        if (err) {
+          return res.json({ success: false, message: 'Erreur du serveur' });
+        } else {
+          return res.json({ success: true, message: 'Mot de passe mis à jour avec succès' });
+        }
+      }
+    );
   });
 });
 
@@ -815,6 +899,67 @@ app.post('/react/:commentId', (req, res) => {
         });
       });
     }
+  });
+});
+
+// Route pour supprimer un commentaire, avec suppression des réactions associées
+app.delete('/comments/:id', (req, res) => {
+  const commentId = req.params.id;
+  const userId = req.session.userId; // ID de l'utilisateur connecté
+  const adminUsername = process.env.ADMIN_USERNAME; // Nom d'utilisateur admin défini dans .env
+
+  if (!userId) {
+    return res.status(403).send('Vous devez être connecté pour supprimer des commentaires.');
+  }
+
+  // Récupération des informations de l'utilisateur connecté
+  db.get(`SELECT * FROM users WHERE id = ?`, [userId], (err, user) => {
+    if (err) {
+      console.error('Erreur lors de la vérification de l\'utilisateur:', err.message);
+      return res.status(500).send('Erreur serveur.');
+    }
+
+    if (!user) {
+      return res.status(403).send('Utilisateur non trouvé.');
+    }
+
+    const deleteComment = () => {
+      // Suppression des réactions associées avant de supprimer le commentaire
+      db.run(`DELETE FROM comment_reactions WHERE comment_id = ?`, [commentId], (err) => {
+        if (err) {
+          console.error('Erreur lors de la suppression des réactions associées:', err.message);
+          return res.status(500).send('Erreur lors de la suppression du commentaire.');
+        }
+
+        // Suppression du commentaire
+        db.run(`DELETE FROM comments WHERE id = ?`, [commentId], function (err) {
+          if (err) {
+            console.error('Erreur lors de la suppression du commentaire:', err.message);
+            return res.status(500).send('Erreur lors de la suppression du commentaire.');
+          }
+          res.status(200).send('Commentaire supprimé avec succès.');
+        });
+      });
+    };
+
+    // Si l'utilisateur est l'admin défini dans .env, il peut supprimer n'importe quel commentaire
+    if (user.username === adminUsername) {
+      return deleteComment();
+    }
+
+    // Vérifier si l'utilisateur est propriétaire du commentaire
+    db.get(`SELECT * FROM comments WHERE id = ? AND userId = ?`, [commentId, userId], (err, comment) => {
+      if (err) {
+        console.error('Erreur lors de la vérification du commentaire:', err.message);
+        return res.status(500).send('Erreur serveur.');
+      }
+
+      if (!comment) {
+        return res.status(403).send('Vous n\'êtes pas autorisé à supprimer ce commentaire.');
+      }
+
+      deleteComment();
+    });
   });
 });
 
