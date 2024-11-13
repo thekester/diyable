@@ -8,6 +8,9 @@ block content
     p Rejoignez notre communauté passionnée de bricolage et d'IoT.
     a(href="#projets")
       button(type="button") Découvrir les Projets
+    if username
+      a(href="/projets/ajouter")
+        button(type="button") Ajouter un Projet
   section#projets
     h2 Projets Récents
 
@@ -15,19 +18,21 @@ block content
     if recentProjects && recentProjects.length > 0
       .project-grid
         each project in recentProjects
-          .project-card(data-category=project.category)
-            //- Option 1: Avec conteneurs pour l'image et les infos
-            .project-image-container
-              img(src=`/images/${project.image}` alt=`${project.name}`)
-            .project-info
-              h3= project.name
-              p= project.description
-              a(href=`/projets/${project.id}`)
-                button(type="button") Voir le Projet
-
+          article.project-card(data-category=project.category ? project.category.toLowerCase() : 'autre')
+            .thumb(style=`background: url('${project.image}') no-repeat center; background-size: cover;`)
+            .infos
+              h2.title
+                = project.name
+                span.flag
+              if project.date
+                h3.date= new Date(project.date).toLocaleDateString('fr-FR')
+              if project.seats
+                h3.seats= `Places restantes: ${project.seats}`
+              p.txt= project.description
+              h3.details
+                a(href=`/projets/${project.id}`) Voir les détails
     else
       p Aucun projet récent disponible pour le moment.
 
 block scripts
   script(src="/script.js")
-

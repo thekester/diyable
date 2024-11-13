@@ -3,13 +3,14 @@
 extends layout
 
 block content
-  section#about
-    h1 À Propos de DIY able
-    p 
-      | DIY able est une plateforme dédiée à la communauté DIY (Do It Yourself) passionnée de bricolage et d'IoT. Nous partageons des projets inspirants, des tutoriels détaillés et des idées innovantes pour vous aider à transformer vos espaces de vie et à développer vos compétences techniques.
+  section.text
+    //- br
+    //- br
+    //- br
+    h1#about À Propos de DIY able
+    p DIY able est une plateforme dédiée à la communauté DIY (Do It Yourself) passionnée de bricolage et d'IoT. Nous partageons des projets inspirants, des tutoriels détaillés et des idées innovantes pour vous aider à transformer vos espaces de vie et à développer vos compétences techniques.
     h2 Notre Mission
-    p 
-      | Notre mission est de rassembler des passionnés de tous horizons, de favoriser l'échange de connaissances et d'encourager la créativité à travers des projets variés et accessibles.
+    p Notre mission est de rassembler des passionnés de tous horizons, de favoriser l'échange de connaissances et d'encourager la créativité à travers des projets variés et accessibles.
     h2 Nos Valeurs
     ul
       li Créativité et Innovation
@@ -17,5 +18,7 @@ block content
       li Qualité et Fiabilité
       li Accessibilité et Inclusion
     h2 Rejoignez-Nous
-    p 
-      | Que vous soyez débutant ou expert, DIY able est l'endroit idéal pour partager vos idées, découvrir de nouveaux projets et vous connecter avec d'autres passionnés. Rejoignez-nous et commencez votre prochain projet DIY dès aujourd'hui !
+    p Que vous soyez débutant ou expert, DIY able est l'endroit idéal pour partager vos idées, découvrir de nouveaux projets et vous connecter avec d'autres passionnés. Rejoignez-nous et commencez votre prochain projet DIY dès aujourd'hui !
+
+block scripts
+  script(src="/script.js")

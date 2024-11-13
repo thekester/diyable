@@ -18,6 +18,9 @@ html(lang="fr")
     link(rel="stylesheet" href="https://fonts.googleapis.com/css?family=Montserrat:400,700&display=swap")
     //- Inclusion de FontAwesome pour les icônes
     link(rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"  crossorigin="anonymous" referrerpolicy="no-referrer")
+    link(rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.4/toastr.min.css")
+    script(src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.4/toastr.min.js")
+
   body
     header
       .logo
@@ -75,7 +78,7 @@ html(lang="fr")
         .footer-section
           h4 Plus de DIY able
           ul
-            li: a(href="/signin") Se Connecter
+            li: a(href="/login") Se Connecter
             li: a(href="/affiliate") Affiliation
             li: a(href="/contact") Nous Contacter
 
