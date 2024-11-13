@@ -10,7 +10,7 @@ A platform for sharing and discovering Do It Yourself (DIY) projects, from craft
 diyable/
 │
 ├── .dockerignore              
-├── .env
+├── .env # Needed for admin
 ├── .gitignore
 ├── app.js
 ├── docker-compose.yml
@@ -76,7 +76,7 @@ diyable/
    npm install express pug sqlite3 dotenv body-parser express-session
 ```
 
-## Port Configuration in the .env
+## Configuration in the .env
 To use a specific address for the diyable app you can set the PORT var in the .env like that: PORT=5133 for example
 With that you can easily set the address for the app in order to modify easily the port to avoid the following error Error: listen EADDRINUSE: address already in use :::5136
 
@@ -89,6 +89,8 @@ ADMIN_PASSWORD=<Your_ADMIN_PASSWORD>
 ADMIN_EMAIL=<Your_ADMIN_EMAIL>
 ```
 
+if you don't create the .env you got a warning like that: Les informations de l'admin ne sont pas entièrement définies dans les variables d'environnement.
+And you can't have access to the admin account because the script use the .env to create the admin account.
 
 ## Docker Configuration
 

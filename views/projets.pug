@@ -1,10 +1,12 @@
-//- projets.pug
-
 extends layout
 
 block content
   section#projets
     h1 Nos Projets
+
+    //- Bouton pour ajouter un projet si l'utilisateur est connecté
+    if username
+      a.button(href='/projets/ajouter') Ajouter un Projet
 
     //- Section des filtres
     .filters
@@ -28,25 +30,25 @@ block content
         button.filter-button(data-category=category)= friendlyCategory
       button.filter-button(data-category="autre") Autre
 
-    //- Always render .project-grid
+    //- Toujours rendre .project-grid
     .project-grid
       if projects.length
         each project in projects
           article.project-card(data-category=project.category ? project.category.toLowerCase() : 'autre')
-            .thumb(style=`background: url('/images/${project.image}') no-repeat center; background-size: cover;`)
+            .thumb(style=`background: url('${project.image}') no-repeat center; background-size: cover;`)
             .infos
               h2.title
                 = project.name
                 span.flag
               if project.date
-                h3.date= project.date
+                h3.date= new Date(project.date).toLocaleDateString('fr-FR')
               if project.seats
                 h3.seats= `Places restantes: ${project.seats}`
               p.txt= project.description
               h3.details
                 a(href=`/projets/${project.id}`) Voir les détails
-      //- Add a placeholder for 'No projects' message
-      p#no-projects-message(style="display: none;") Aucun projet disponible pour cette catégorie.
+      else
+        p#no-projects-message Aucun projet disponible pour cette catégorie.
 
 block scripts
   script(src="/script.js")
