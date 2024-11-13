@@ -1,5 +1,8 @@
 # DIY Project Sharing Platform
 
+## Demo
+https://www.youtube.com/watch?v=9aLlv0VMlj4
+
 ## Overview
 
 A platform for sharing and discovering Do It Yourself (DIY) projects, from crafts to tech innovations. Whether you enjoy woodworking, home improvement, or creative electronics, this is the place to get inspired and inspire others.
@@ -135,7 +138,7 @@ To avoid the error of Error: secret option required for sessions you need to run
 
 # Schéma de la Base de Données
 
-![database graphs](assets/images/diyable-db.png)
+![database graphs](assets/images/diyable-dbv2.png)
 
 > This graph was made using [ChartDB](https://chartdb.io/).
 
@@ -144,6 +147,16 @@ Here is the structure of the database:
 ```json
 {
   "fk_info": [
+    {
+      "schema": "",
+      "table": "projects",
+      "column": "userId",
+      "foreign_key_name": "fk_projects_userId_users_id",
+      "reference_schema": "",
+      "reference_table": "users",
+      "reference_column": "id",
+      "fk_def": "FOREIGN KEY (userId) REFERENCES users(id) ON UPDATE NO ACTION ON DELETE NO ACTION"
+    },
     {
       "schema": "",
       "table": "comments",
@@ -188,14 +201,14 @@ Here is the structure of the database:
   "pk_info": [
     {
       "schema": "",
-      "table": "projects",
+      "table": "users",
       "field_count": 1,
       "column": "id",
       "pk_def": "PRIMARY KEY (id)"
     },
     {
       "schema": "",
-      "table": "users",
+      "table": "projects",
       "field_count": 1,
       "column": "id",
       "pk_def": "PRIMARY KEY (id)"
@@ -218,86 +231,14 @@ Here is the structure of the database:
   "columns": [
     {
       "schema": "",
-      "table": "projects",
-      "name": "id",
-      "type": "integer",
-      "ordinal_position": 0,
-      "nullable": "false",
-      "collation": "",
-      "character_maximum_length": "null",
-      "precision": "null",
-      "default": null
-    },
-    {
-      "schema": "",
-      "table": "projects",
-      "name": "date",
-      "type": "text",
-      "ordinal_position": 1,
-      "nullable": "false",
-      "collation": "",
-      "character_maximum_length": "null",
-      "precision": "null",
-      "default": null
-    },
-    {
-      "schema": "",
-      "table": "projects",
-      "name": "name",
-      "type": "text",
-      "ordinal_position": 2,
-      "nullable": "false",
-      "collation": "",
-      "character_maximum_length": "null",
-      "precision": "null",
-      "default": null
-    },
-    {
-      "schema": "",
-      "table": "projects",
-      "name": "description",
-      "type": "text",
-      "ordinal_position": 3,
-      "nullable": "true",
-      "collation": "",
-      "character_maximum_length": "null",
-      "precision": "null",
-      "default": null
-    },
-    {
-      "schema": "",
-      "table": "projects",
-      "name": "category",
-      "type": "text",
-      "ordinal_position": 4,
-      "nullable": "true",
-      "collation": "",
-      "character_maximum_length": "null",
-      "precision": "null",
-      "default": null
-    },
-    {
-      "schema": "",
-      "table": "projects",
-      "name": "image",
-      "type": "text",
-      "ordinal_position": 5,
-      "nullable": "true",
-      "collation": "",
-      "character_maximum_length": "null",
-      "precision": "null",
-      "default": null
-    },
-    {
-      "schema": "",
       "table": "users",
       "name": "id",
       "type": "integer",
       "ordinal_position": 0,
       "nullable": "false",
-      "collation": "",
-      "character_maximum_length": "null",
-      "precision": "null",
+      "collation": null,
+      "character_maximum_length": null,
+      "precision": null,
       "default": null
     },
     {
@@ -307,9 +248,9 @@ Here is the structure of the database:
       "type": "text",
       "ordinal_position": 1,
       "nullable": "false",
-      "collation": "",
-      "character_maximum_length": "null",
-      "precision": "null",
+      "collation": null,
+      "character_maximum_length": null,
+      "precision": null,
       "default": null
     },
     {
@@ -319,9 +260,9 @@ Here is the structure of the database:
       "type": "text",
       "ordinal_position": 2,
       "nullable": "false",
-      "collation": "",
-      "character_maximum_length": "null",
-      "precision": "null",
+      "collation": null,
+      "character_maximum_length": null,
+      "precision": null,
       "default": null
     },
     {
@@ -331,9 +272,9 @@ Here is the structure of the database:
       "type": "text",
       "ordinal_position": 3,
       "nullable": "false",
-      "collation": "",
-      "character_maximum_length": "null",
-      "precision": "null",
+      "collation": null,
+      "character_maximum_length": null,
+      "precision": null,
       "default": null
     },
     {
@@ -343,9 +284,93 @@ Here is the structure of the database:
       "type": "text",
       "ordinal_position": 4,
       "nullable": "false",
-      "collation": "",
-      "character_maximum_length": "null",
-      "precision": "null",
+      "collation": null,
+      "character_maximum_length": null,
+      "precision": null,
+      "default": null
+    },
+    {
+      "schema": "",
+      "table": "projects",
+      "name": "id",
+      "type": "integer",
+      "ordinal_position": 0,
+      "nullable": "false",
+      "collation": null,
+      "character_maximum_length": null,
+      "precision": null,
+      "default": null
+    },
+    {
+      "schema": "",
+      "table": "projects",
+      "name": "date",
+      "type": "text",
+      "ordinal_position": 1,
+      "nullable": "false",
+      "collation": null,
+      "character_maximum_length": null,
+      "precision": null,
+      "default": null
+    },
+    {
+      "schema": "",
+      "table": "projects",
+      "name": "name",
+      "type": "text",
+      "ordinal_position": 2,
+      "nullable": "false",
+      "collation": null,
+      "character_maximum_length": null,
+      "precision": null,
+      "default": null
+    },
+    {
+      "schema": "",
+      "table": "projects",
+      "name": "description",
+      "type": "text",
+      "ordinal_position": 3,
+      "nullable": "true",
+      "collation": null,
+      "character_maximum_length": null,
+      "precision": null,
+      "default": null
+    },
+    {
+      "schema": "",
+      "table": "projects",
+      "name": "category",
+      "type": "text",
+      "ordinal_position": 4,
+      "nullable": "true",
+      "collation": null,
+      "character_maximum_length": null,
+      "precision": null,
+      "default": null
+    },
+    {
+      "schema": "",
+      "table": "projects",
+      "name": "image",
+      "type": "text",
+      "ordinal_position": 5,
+      "nullable": "true",
+      "collation": null,
+      "character_maximum_length": null,
+      "precision": null,
+      "default": null
+    },
+    {
+      "schema": "",
+      "table": "projects",
+      "name": "userId",
+      "type": "integer",
+      "ordinal_position": 6,
+      "nullable": "false",
+      "collation": null,
+      "character_maximum_length": null,
+      "precision": null,
       "default": null
     },
     {
@@ -355,9 +380,9 @@ Here is the structure of the database:
       "type": "integer",
       "ordinal_position": 0,
       "nullable": "false",
-      "collation": "",
-      "character_maximum_length": "null",
-      "precision": "null",
+      "collation": null,
+      "character_maximum_length": null,
+      "precision": null,
       "default": null
     },
     {
@@ -367,9 +392,9 @@ Here is the structure of the database:
       "type": "integer",
       "ordinal_position": 1,
       "nullable": "false",
-      "collation": "",
-      "character_maximum_length": "null",
-      "precision": "null",
+      "collation": null,
+      "character_maximum_length": null,
+      "precision": null,
       "default": null
     },
     {
@@ -379,9 +404,9 @@ Here is the structure of the database:
       "type": "integer",
       "ordinal_position": 2,
       "nullable": "false",
-      "collation": "",
-      "character_maximum_length": "null",
-      "precision": "null",
+      "collation": null,
+      "character_maximum_length": null,
+      "precision": null,
       "default": null
     },
     {
@@ -391,9 +416,9 @@ Here is the structure of the database:
       "type": "text",
       "ordinal_position": 3,
       "nullable": "false",
-      "collation": "",
-      "character_maximum_length": "null",
-      "precision": "null",
+      "collation": null,
+      "character_maximum_length": null,
+      "precision": null,
       "default": null
     },
     {
@@ -403,9 +428,9 @@ Here is the structure of the database:
       "type": "text",
       "ordinal_position": 4,
       "nullable": "false",
-      "collation": "",
-      "character_maximum_length": "null",
-      "precision": "null",
+      "collation": null,
+      "character_maximum_length": null,
+      "precision": null,
       "default": null
     },
     {
@@ -415,9 +440,9 @@ Here is the structure of the database:
       "type": "integer",
       "ordinal_position": 0,
       "nullable": "false",
-      "collation": "",
-      "character_maximum_length": "null",
-      "precision": "null",
+      "collation": null,
+      "character_maximum_length": null,
+      "precision": null,
       "default": null
     },
     {
@@ -427,9 +452,9 @@ Here is the structure of the database:
       "type": "integer",
       "ordinal_position": 1,
       "nullable": "false",
-      "collation": "",
-      "character_maximum_length": "null",
-      "precision": "null",
+      "collation": null,
+      "character_maximum_length": null,
+      "precision": null,
       "default": null
     },
     {
@@ -439,9 +464,9 @@ Here is the structure of the database:
       "type": "integer",
       "ordinal_position": 2,
       "nullable": "false",
-      "collation": "",
-      "character_maximum_length": "null",
-      "precision": "null",
+      "collation": null,
+      "character_maximum_length": null,
+      "precision": null,
       "default": null
     },
     {
@@ -451,9 +476,9 @@ Here is the structure of the database:
       "type": "text",
       "ordinal_position": 3,
       "nullable": "false",
-      "collation": "",
-      "character_maximum_length": "null",
-      "precision": "null",
+      "collation": null,
+      "character_maximum_length": null,
+      "precision": null,
       "default": null
     },
     {
@@ -463,71 +488,23 @@ Here is the structure of the database:
       "type": "text",
       "ordinal_position": 4,
       "nullable": "false",
-      "collation": "",
-      "character_maximum_length": "null",
-      "precision": "null",
+      "collation": null,
+      "character_maximum_length": null,
+      "precision": null,
       "default": null
     }
   ],
   "indexes": [
     {
       "schema": "",
-      "table": "projects",
-      "name": "sqlite_autoindex_projects_1",
-      "column": "id",
-      "index_type": "B-TREE",
-      "cardinality": "",
-      "size": "",
-      "unique": "true",
-      "direction": "",
-      "column_position": 1
-    },
-    {
-      "schema": "",
-      "table": "projects",
-      "name": "sqlite_autoindex_projects_2",
-      "column": "name",
-      "index_type": "B-TREE",
-      "cardinality": "",
-      "size": "",
-      "unique": "true",
-      "direction": "",
-      "column_position": 1
-    },
-    {
-      "schema": "",
-      "table": "projects",
-      "name": "sqlite_autoindex_projects_2",
-      "column": "date",
-      "index_type": "B-TREE",
-      "cardinality": "",
-      "size": "",
-      "unique": "true",
-      "direction": "",
-      "column_position": 2
-    },
-    {
-      "schema": "",
-      "table": "projects",
-      "name": "sqlite_autoindex_projects_2",
-      "column": "image",
-      "index_type": "B-TREE",
-      "cardinality": "",
-      "size": "",
-      "unique": "true",
-      "direction": "",
-      "column_position": 3
-    },
-    {
-      "schema": "",
       "table": "users",
       "name": "sqlite_autoindex_users_1",
       "column": "id",
       "index_type": "B-TREE",
-      "cardinality": "",
-      "size": "",
+      "cardinality": null,
+      "size": null,
       "unique": "true",
-      "direction": "",
+      "direction": null,
       "column_position": 1
     },
     {
@@ -536,11 +513,71 @@ Here is the structure of the database:
       "name": "sqlite_autoindex_users_2",
       "column": "username",
       "index_type": "B-TREE",
-      "cardinality": "",
-      "size": "",
+      "cardinality": null,
+      "size": null,
       "unique": "true",
-      "direction": "",
+      "direction": null,
       "column_position": 1
+    },
+    {
+      "schema": "",
+      "table": "users",
+      "name": "sqlite_autoindex_users_3",
+      "column": "email",
+      "index_type": "B-TREE",
+      "cardinality": null,
+      "size": null,
+      "unique": "true",
+      "direction": null,
+      "column_position": 1
+    },
+    {
+      "schema": "",
+      "table": "projects",
+      "name": "sqlite_autoindex_projects_1",
+      "column": "id",
+      "index_type": "B-TREE",
+      "cardinality": null,
+      "size": null,
+      "unique": "true",
+      "direction": null,
+      "column_position": 1
+    },
+    {
+      "schema": "",
+      "table": "projects",
+      "name": "sqlite_autoindex_projects_2",
+      "column": "name",
+      "index_type": "B-TREE",
+      "cardinality": null,
+      "size": null,
+      "unique": "true",
+      "direction": null,
+      "column_position": 1
+    },
+    {
+      "schema": "",
+      "table": "projects",
+      "name": "sqlite_autoindex_projects_2",
+      "column": "date",
+      "index_type": "B-TREE",
+      "cardinality": null,
+      "size": null,
+      "unique": "true",
+      "direction": null,
+      "column_position": 2
+    },
+    {
+      "schema": "",
+      "table": "projects",
+      "name": "sqlite_autoindex_projects_2",
+      "column": "image",
+      "index_type": "B-TREE",
+      "cardinality": null,
+      "size": null,
+      "unique": "true",
+      "direction": null,
+      "column_position": 3
     },
     {
       "schema": "",
@@ -548,10 +585,10 @@ Here is the structure of the database:
       "name": "sqlite_autoindex_comments_1",
       "column": "id",
       "index_type": "B-TREE",
-      "cardinality": "",
-      "size": "",
+      "cardinality": null,
+      "size": null,
       "unique": "true",
-      "direction": "",
+      "direction": null,
       "column_position": 1
     },
     {
@@ -560,10 +597,10 @@ Here is the structure of the database:
       "name": "sqlite_autoindex_comment_reactions_1",
       "column": "id",
       "index_type": "B-TREE",
-      "cardinality": "",
-      "size": "",
+      "cardinality": null,
+      "size": null,
       "unique": "true",
-      "direction": "",
+      "direction": null,
       "column_position": 1
     },
     {
@@ -572,10 +609,10 @@ Here is the structure of the database:
       "name": "sqlite_autoindex_comment_reactions_2",
       "column": "comment_id",
       "index_type": "B-TREE",
-      "cardinality": "",
-      "size": "",
+      "cardinality": null,
+      "size": null,
       "unique": "true",
-      "direction": "",
+      "direction": null,
       "column_position": 1
     },
     {
@@ -584,10 +621,10 @@ Here is the structure of the database:
       "name": "sqlite_autoindex_comment_reactions_2",
       "column": "userId",
       "index_type": "B-TREE",
-      "cardinality": "",
-      "size": "",
+      "cardinality": null,
+      "size": null,
       "unique": "true",
-      "direction": "",
+      "direction": null,
       "column_position": 2
     },
     {
@@ -596,51 +633,52 @@ Here is the structure of the database:
       "name": "sqlite_autoindex_comment_reactions_2",
       "column": "emoji",
       "index_type": "B-TREE",
-      "cardinality": "",
-      "size": "",
+      "cardinality": null,
+      "size": null,
       "unique": "true",
-      "direction": "",
+      "direction": null,
       "column_position": 3
     }
   ],
   "tables": [
     {
       "schema": "",
-      "table": "projects",
-      "rows": -1,
-      "type": "table",
-      "engine": "",
-      "collation": ""
-    },
-    {
-      "schema": "",
       "table": "users",
       "rows": -1,
       "type": "table",
-      "engine": "",
-      "collation": ""
+      "engine": null,
+      "collation": null
+    },
+    {
+      "schema": "",
+      "table": "projects",
+      "rows": -1,
+      "type": "table",
+      "engine": null,
+      "collation": null
     },
     {
       "schema": "",
       "table": "comments",
       "rows": -1,
       "type": "table",
-      "engine": "",
-      "collation": ""
+      "engine": null,
+      "collation": null
     },
     {
       "schema": "",
       "table": "comment_reactions",
       "rows": -1,
       "type": "table",
-      "engine": "",
-      "collation": ""
+      "engine": null,
+      "collation": null
     }
   ],
   "views": [],
   "database_name": "sqlite",
   "version": "3.31.1"
 }
+
 ```
 
 ## Features
