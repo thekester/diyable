@@ -781,12 +781,19 @@ app.post('/change-password', (req, res) => {
         if (err) {
           return res.json({ success: false, message: 'Erreur du serveur' });
         } else {
-          return res.json({ success: true, message: 'Mot de passe mis à jour avec succès' });
+          // Détruire la session pour déconnecter l'utilisateur
+          req.session.destroy((err) => {
+            if (err) {
+              return res.json({ success: false, message: 'Erreur lors de la déconnexion après le changement de mot de passe' });
+            }
+            return res.json({ success: true, message: 'Mot de passe mis à jour avec succès. Vous avez été déconnecté.', redirect: '/login' });
+          });
         }
       }
     );
   });
 });
+
 
 // Route pour soumettre un commentaire
 app.post('/comments', (req, res) => {

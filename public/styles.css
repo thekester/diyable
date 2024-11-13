@@ -912,11 +912,11 @@ form .form-footer a:hover {
   }
 }
 
-#loginForm, #registerForm, #contact, #about, .project-detail, #titleCreate, #h1nosprojets {
-  margin-top: 10%;
+#loginForm, #registerForm, #contact, #about, .project-detail, #titleCreate, #h1nosprojets  {
+  margin-top: 10%; 
 }
 
-#h1nosprojets{
+#h1nosprojets, #termsofservice, #privacypolicy, #profiletitle{
   margin-top: 6%;
 }
 

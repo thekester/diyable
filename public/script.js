@@ -246,20 +246,39 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 
-  function showNotification(type, message) {
+
+  function showNotification(type, message, callback, countdownSeconds) {
     const notification = document.getElementById('notification');
-    notification.textContent = message;
     notification.className = 'notification'; // Réinitialiser les classes
     if (type === 'success') {
       notification.classList.add('success');
     }
     notification.style.display = 'block';
-
-    // Masquer la notification après 3 secondes
-    setTimeout(() => {
-      notification.style.display = 'none';
-    }, 3000);
+  
+    if (countdownSeconds && countdownSeconds > 0) {
+      let remainingSeconds = countdownSeconds;
+      notification.textContent = `${message} Vous allez être déconnecté dans ${remainingSeconds} seconde(s).`;
+      const intervalId = setInterval(() => {
+        remainingSeconds--;
+        if (remainingSeconds > 0) {
+          notification.textContent = `${message} Vous allez être déconnecté dans ${remainingSeconds} seconde(s).`;
+        } else {
+          clearInterval(intervalId);
+          notification.style.display = 'none';
+          if (callback) callback();
+        }
+      }, 1000);
+    } else {
+      notification.textContent = message;
+      // Masquer la notification après 3 secondes
+      setTimeout(() => {
+        notification.style.display = 'none';
+        if (callback) callback();
+      }, 3000);
+    }
   }
+  
+  
 
   const loginForm = document.getElementById('loginForm');
   const registerForm = document.getElementById('registerForm');
@@ -335,13 +354,13 @@ document.addEventListener('DOMContentLoaded', function () {
   if (changePasswordForm) {
     changePasswordForm.addEventListener('submit', function (event) {
       event.preventDefault();
-
+  
       const formData = new FormData(changePasswordForm);
       const data = {
         currentPassword: formData.get('currentPassword'),
         newPassword: formData.get('newPassword')
       };
-
+  
       fetch('/change-password', {
         method: 'POST',
         headers: {
@@ -352,7 +371,12 @@ document.addEventListener('DOMContentLoaded', function () {
       .then(response => response.json())
       .then(data => {
         if (data.success) {
-          showNotification('success', data.message);  // Affiche le message de succès
+          const countdownSeconds = 3; // Durée du compte à rebours en secondes
+          showNotification('success', data.message, () => {
+            if (data.redirect) {
+              window.location.href = data.redirect;
+            }
+          }, countdownSeconds);
         } else {
           showNotification('error', data.message);  // Affiche l'erreur
         }
@@ -363,4 +387,6 @@ document.addEventListener('DOMContentLoaded', function () {
       });
     });
   }
+  
+
 });
