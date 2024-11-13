@@ -5,8 +5,10 @@ block content
     h1#h1nosprojets Nos Projets
 
     //- Bouton pour ajouter un projet si l'utilisateur est connecté
+
     if username
-      a.button(href='/projets/ajouter') Ajouter un Projet
+      a(href="/projets/ajouter")
+        button(type="button") Ajouter un Projet
 
     //- Section des filtres
     .filters

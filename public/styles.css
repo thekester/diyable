@@ -151,7 +151,7 @@ h3 .date {
   animation: fadeInUp 1.2s;
 }
 
-.hero button {
+.hero button, a button {
   padding: 15px 30px;
   font-size: 1.2rem;
   background-color: var(--secondary-color);
@@ -163,7 +163,7 @@ h3 .date {
   animation: fadeInUp 1.4s;
 }
 
-.hero button:hover {
+.hero button:hover, a button:hover {
   background-color: #218838;
   transform: translateY(-3px);
 }
