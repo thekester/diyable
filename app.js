@@ -1225,13 +1225,15 @@ app.post(
 
 // Route pour gérer les réactions aux commentaires
 app.post('/react/:commentId', isAuthenticated, csrfMiddleware, (req, res) => {
-  const { commentId } = req.params;
-  const { emoji } = req.body;
-  const userId = req.session.userId;
+  const commentId = parseInt(req.params.commentId, 10);
+  const userId = parseInt(req.session.userId, 10);
+  const emoji = req.body.emoji.trim();
   const date = new Date().toISOString();
 
+  console.log('Tentative de réaction :', { commentId, emoji, userId });
+
   // Validation des données reçues
-  if (!commentId || !emoji) {
+  if (isNaN(commentId) || isNaN(userId) || !emoji) {
     return res.status(400).json({ success: false, message: 'Données invalides.' });
   }
 
@@ -1246,6 +1248,8 @@ app.post('/react/:commentId', isAuthenticated, csrfMiddleware, (req, res) => {
       console.error('Erreur lors de la vérification de la réaction:', err);
       return res.status(500).json({ success: false, message: 'Erreur serveur.' });
     }
+
+    console.log('Résultat de la vérification de la réaction :', row);
 
     if (row) {
       // La réaction existe, on la supprime (toggle off)
@@ -1284,10 +1288,10 @@ app.post('/react/:commentId', isAuthenticated, csrfMiddleware, (req, res) => {
       `;
       db.run(insertReactionQuery, [commentId, userId, emoji, date], function (err) {
         if (err) {
-          console.error("Erreur lors de l'ajout de la réaction:", err);
+          console.error('Erreur lors de l\'ajout de la réaction:', err);
           return res
             .status(500)
-            .json({ success: false, message: "Erreur lors de l'ajout de la réaction." });
+            .json({ success: false, message: 'Erreur lors de l\'ajout de la réaction.' });
         }
         // Compter le nombre total de réactions pour cet emoji sur le commentaire
         const countReactionsQuery = `

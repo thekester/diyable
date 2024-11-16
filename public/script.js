@@ -144,11 +144,14 @@ document.addEventListener('DOMContentLoaded', function () {
       })
         .then((response) => {
           if (!response.ok) {
-            return response.json().then((data) => {
-              throw data;
-            }).catch(() => {
-              throw new Error("Erreur lors de l'ajout du commentaire.");
-            });
+            return response
+              .json()
+              .then((data) => {
+                throw data;
+              })
+              .catch(() => {
+                throw new Error("Erreur lors de l'ajout du commentaire.");
+              });
           }
           return response.json();
         })
@@ -198,8 +201,18 @@ document.addEventListener('DOMContentLoaded', function () {
       `;
 
       commentList.prepend(commentElement);
-      attachReactionEventListeners(); // Ré-attacher les événements
-      attachDeleteEventListeners();
+
+      // Attacher les écouteurs aux boutons de réaction du nouveau commentaire
+      const reactionButtons = commentElement.querySelectorAll('.reaction-button');
+      reactionButtons.forEach((button) => {
+        button.addEventListener('click', reactToComment);
+      });
+
+      // Attacher l'écouteur au bouton de suppression
+      const deleteButton = commentElement.querySelector('.delete-button');
+      if (deleteButton) {
+        deleteButton.addEventListener('click', deleteItem);
+      }
     }
   }
 
@@ -209,10 +222,11 @@ document.addEventListener('DOMContentLoaded', function () {
     let html = '';
     reactions.forEach((emoji) => {
       const count = comment.reactions && comment.reactions[emoji] ? comment.reactions[emoji] : 0;
+      const userHasReacted = comment.userReactions && comment.userReactions.includes(emoji);
       html += `
         <button
           type="button"
-          class="reaction-button"
+          class="reaction-button ${userHasReacted ? 'reacted' : ''}"
           data-comment-id="${comment.id}"
           data-emoji="${emoji}"
         >
@@ -227,8 +241,12 @@ document.addEventListener('DOMContentLoaded', function () {
   function reactToComment(event) {
     event.preventDefault();
     const button = event.currentTarget;
+    button.disabled = true; // Désactiver le bouton pendant la requête
+
     const commentId = button.getAttribute('data-comment-id');
     const emoji = button.getAttribute('data-emoji');
+
+    console.log('Réaction envoyée pour le commentaire ID:', commentId, 'avec emoji:', emoji);
 
     fetch(`/react/${commentId}`, {
       method: 'POST',
@@ -242,11 +260,14 @@ document.addEventListener('DOMContentLoaded', function () {
       .then((response) => {
         if (!response.ok) {
           if (response.status === 403) {
-            return response.json().then((data) => {
-              throw new Error(data.message || 'Erreur de sécurité. Veuillez recharger la page.');
-            }).catch(() => {
-              throw new Error('Erreur de sécurité. Veuillez recharger la page.');
-            });
+            return response
+              .json()
+              .then((data) => {
+                throw new Error(data.message || 'Erreur de sécurité. Veuillez recharger la page.');
+              })
+              .catch(() => {
+                throw new Error('Erreur de sécurité. Veuillez recharger la page.');
+              });
           } else {
             return response.text().then((text) => {
               throw new Error(text || 'Erreur lors de la mise à jour de la réaction.');
@@ -263,10 +284,12 @@ document.addEventListener('DOMContentLoaded', function () {
         } else {
           showNotification('error', data.message || 'Une erreur est survenue.');
         }
+        button.disabled = false; // Réactiver le bouton
       })
       .catch((error) => {
         showNotification('error', error.message);
         console.error('Erreur:', error);
+        button.disabled = false; // Réactiver le bouton
       });
   }
 
@@ -274,8 +297,10 @@ document.addEventListener('DOMContentLoaded', function () {
   function attachReactionEventListeners() {
     const reactionButtons = document.querySelectorAll('.reaction-button');
     reactionButtons.forEach((button) => {
-      button.removeEventListener('click', reactToComment); // Éviter les doublons
-      button.addEventListener('click', reactToComment);
+      if (!button.classList.contains('listener-attached')) {
+        button.addEventListener('click', reactToComment);
+        button.classList.add('listener-attached');
+      }
     });
   }
 
@@ -361,8 +386,10 @@ document.addEventListener('DOMContentLoaded', function () {
   function attachDeleteEventListeners() {
     const deleteButtons = document.querySelectorAll('.delete-button, .delete-button2');
     deleteButtons.forEach((button) => {
-      button.removeEventListener('click', deleteItem); // Éviter les doublons
-      button.addEventListener('click', deleteItem);
+      if (!button.classList.contains('listener-attached')) {
+        button.addEventListener('click', deleteItem);
+        button.classList.add('listener-attached');
+      }
     });
   }
 
@@ -446,13 +473,13 @@ document.addEventListener('DOMContentLoaded', function () {
   if (loginForm) {
     loginForm.addEventListener('submit', function (event) {
       event.preventDefault();
-  
+
       const formData = new FormData(loginForm);
       const data = {
         username: formData.get('username'),
         password: formData.get('password'),
       };
-  
+
       fetch('/login', {
         method: 'POST',
         headers: {
@@ -468,11 +495,11 @@ document.addEventListener('DOMContentLoaded', function () {
           // Ajouter des logs pour le statut et les en-têtes de la réponse
           console.log('Response Status:', response.status);
           console.log('Response Headers:', [...response.headers.entries()]);
-  
+
           // Lire le corps de la réponse sous forme de texte
           return response.text().then((text) => {
             console.log('Response Body:', text);
-  
+
             if (!response.ok) {
               // Tenter de parser le texte en JSON
               try {
@@ -514,8 +541,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
   }
-  
-  
+
   if (registerForm) {
     registerForm.addEventListener('submit', function (event) {
       event.preventDefault();
@@ -538,11 +564,14 @@ document.addEventListener('DOMContentLoaded', function () {
       })
         .then((response) => {
           if (!response.ok) {
-            return response.json().then((data) => {
-              throw data;
-            }).catch(() => {
-              throw new Error('Erreur lors de la création du compte.');
-            });
+            return response
+              .json()
+              .then((data) => {
+                throw data;
+              })
+              .catch(() => {
+                throw new Error('Erreur lors de la création du compte.');
+              });
           }
           return response.json();
         })
@@ -599,11 +628,14 @@ document.addEventListener('DOMContentLoaded', function () {
       })
         .then((response) => {
           if (!response.ok) {
-            return response.json().then((data) => {
-              throw data;
-            }).catch(() => {
-              throw new Error('Erreur lors du changement de mot de passe.');
-            });
+            return response
+              .json()
+              .then((data) => {
+                throw data;
+              })
+              .catch(() => {
+                throw new Error('Erreur lors du changement de mot de passe.');
+              });
           }
           return response.json();
         })
