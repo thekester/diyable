@@ -1,8 +1,7 @@
-// script.js
-
 document.addEventListener('DOMContentLoaded', function () {
-  // Récupérer le jeton CSRF depuis une variable globale définie dans le layout Pug
-  const csrfToken = window.csrfToken || '';
+  // Récupérer le jeton CSRF depuis la balise meta
+  const csrfTokenMeta = document.querySelector('meta[name="csrf-token"]');
+  const csrfToken = csrfTokenMeta ? csrfTokenMeta.getAttribute('content') : '';
 
   // **Dark Mode Implementation**
 
@@ -141,11 +140,14 @@ document.addEventListener('DOMContentLoaded', function () {
           'X-CSRF-Token': csrfToken, // Utiliser le jeton CSRF récupéré
         },
         body: JSON.stringify(data),
+        credentials: 'include', // Inclure les cookies de session
       })
         .then((response) => {
           if (!response.ok) {
             return response.json().then((data) => {
               throw data;
+            }).catch(() => {
+              throw new Error("Erreur lors de l'ajout du commentaire.");
             });
           }
           return response.json();
@@ -232,30 +234,39 @@ document.addEventListener('DOMContentLoaded', function () {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Accept: 'application/json',
-        'X-CSRF-Token': csrfToken, // Modifié ici
+        'X-CSRF-Token': csrfToken, // Utiliser le jeton CSRF récupéré
       },
       body: JSON.stringify({ emoji }),
+      credentials: 'include', // Inclure les cookies de session
     })
-      .then((response) => response.json())
+      .then((response) => {
+        if (!response.ok) {
+          if (response.status === 403) {
+            return response.json().then((data) => {
+              throw new Error(data.message || 'Erreur de sécurité. Veuillez recharger la page.');
+            }).catch(() => {
+              throw new Error('Erreur de sécurité. Veuillez recharger la page.');
+            });
+          } else {
+            return response.text().then((text) => {
+              throw new Error(text || 'Erreur lors de la mise à jour de la réaction.');
+            });
+          }
+        }
+        return response.json();
+      })
       .then((data) => {
         if (data.success) {
-          // Mettre à jour le compteur de réactions sans recharger la page
-          const count = data.updatedCount;
-          button.querySelector('.reaction-count').textContent = count;
-
-          // Gérer l'état actif du bouton pour indiquer que l'utilisateur a réagi ou non
-          if (data.userHasReacted) {
-            button.classList.add('reacted');
-          } else {
-            button.classList.remove('reacted');
-          }
+          // Mettre à jour le compteur de réactions
+          button.querySelector('.reaction-count').textContent = data.updatedCount;
+          button.classList.toggle('reacted', data.userHasReacted);
         } else {
-          console.error('Erreur lors de la mise à jour de la réaction.', data.message);
+          showNotification('error', data.message || 'Une erreur est survenue.');
         }
       })
       .catch((error) => {
-        console.error('Erreur réseau:', error);
+        showNotification('error', error.message);
+        console.error('Erreur:', error);
       });
   }
 
@@ -288,9 +299,9 @@ document.addEventListener('DOMContentLoaded', function () {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
-          Accept: 'application/json',
-          'X-CSRF-Token': csrfToken, // Modifié ici
+          'X-CSRF-Token': csrfToken, // Utiliser le jeton CSRF récupéré
         },
+        credentials: 'include', // Inclure les cookies de session
       })
         .then((response) => {
           if (response.ok) {
@@ -324,9 +335,9 @@ document.addEventListener('DOMContentLoaded', function () {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
-          Accept: 'application/json',
-          'X-CSRF-Token': csrfToken, // Modifié ici
+          'X-CSRF-Token': csrfToken, // Utiliser le jeton CSRF récupéré
         },
+        credentials: 'include', // Inclure les cookies de session
       })
         .then((response) => {
           if (response.ok) {
@@ -391,6 +402,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
   function showNotification(type, message, callback, countdownSeconds) {
     const notification = document.getElementById('notification');
+    if (!notification) {
+      alert(message); // Fallback si l'élément n'existe pas
+      if (callback) callback();
+      return;
+    }
     notification.className = 'notification'; // Réinitialiser les classes
     if (type === 'success') {
       notification.classList.add('success');
@@ -430,29 +446,47 @@ document.addEventListener('DOMContentLoaded', function () {
   if (loginForm) {
     loginForm.addEventListener('submit', function (event) {
       event.preventDefault();
-
+  
       const formData = new FormData(loginForm);
       const data = {
         username: formData.get('username'),
         password: formData.get('password'),
       };
-
+  
       fetch('/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Accept: 'application/json',
-          'X-CSRF-Token': csrfToken, // Modifié ici
+          'X-CSRF-Token': csrfToken,
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
         },
         body: JSON.stringify(data),
+        credentials: 'include',
       })
         .then((response) => {
-          if (!response.ok) {
-            return response.json().then((data) => {
-              throw data;
-            });
-          }
-          return response.json();
+          // Ajouter des logs pour le statut et les en-têtes de la réponse
+          console.log('Response Status:', response.status);
+          console.log('Response Headers:', [...response.headers.entries()]);
+  
+          // Lire le corps de la réponse sous forme de texte
+          return response.text().then((text) => {
+            console.log('Response Body:', text);
+  
+            if (!response.ok) {
+              // Tenter de parser le texte en JSON
+              try {
+                const data = JSON.parse(text);
+                throw data;
+              } catch (error) {
+                // Si le parsing échoue, lancer une erreur avec le texte brut
+                throw new Error(text || 'Erreur lors de la connexion.');
+              }
+            } else {
+              // Si la réponse est OK, parser le JSON
+              return JSON.parse(text);
+            }
+          });
         })
         .then((data) => {
           if (data.success) {
@@ -475,17 +509,13 @@ document.addEventListener('DOMContentLoaded', function () {
           }
         })
         .catch((error) => {
-          if (error && error.errors) {
-            const errorMessages = error.errors.map((err) => err.msg).join('<br>');
-            showNotification('error', errorMessages);
-          } else {
-            showNotification('error', error.message || 'Une erreur est survenue.');
-          }
+          showNotification('error', error.message || 'Une erreur est survenue.');
           console.error('Erreur réseau:', error);
         });
     });
   }
-
+  
+  
   if (registerForm) {
     registerForm.addEventListener('submit', function (event) {
       event.preventDefault();
@@ -501,15 +531,17 @@ document.addEventListener('DOMContentLoaded', function () {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Accept: 'application/json',
-          'X-CSRF-Token': csrfToken, // Modifié ici
+          'X-CSRF-Token': csrfToken, // Utiliser le jeton CSRF récupéré
         },
         body: JSON.stringify(data),
+        credentials: 'include', // Inclure les cookies de session
       })
         .then((response) => {
           if (!response.ok) {
             return response.json().then((data) => {
               throw data;
+            }).catch(() => {
+              throw new Error('Erreur lors de la création du compte.');
             });
           }
           return response.json();
@@ -560,15 +592,17 @@ document.addEventListener('DOMContentLoaded', function () {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Accept: 'application/json',
-          'X-CSRF-Token': csrfToken, // Modifié ici
+          'X-CSRF-Token': csrfToken, // Utiliser le jeton CSRF récupéré
         },
         body: JSON.stringify(data),
+        credentials: 'include', // Inclure les cookies de session
       })
         .then((response) => {
           if (!response.ok) {
             return response.json().then((data) => {
               throw data;
+            }).catch(() => {
+              throw new Error('Erreur lors du changement de mot de passe.');
             });
           }
           return response.json();

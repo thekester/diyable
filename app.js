@@ -44,7 +44,13 @@ app.use((req, res, next) => {
 });
 
 // Initialiser le middleware CSRF
-const csrfProtection = csrf();
+const csrfProtection = csrf({
+  cookie: false, // Si vous n'utilisez pas de cookie pour le jeton CSRF
+  value: (req) => {
+    return req.headers['x-csrf-token'] || req.body._csrf || req.query._csrf;
+  },
+});
+
 
 // Fonction pour appliquer le middleware CSRF et ajouter le jeton CSRF aux variables locales
 function csrfMiddleware(req, res, next) {
@@ -57,11 +63,29 @@ function csrfMiddleware(req, res, next) {
   });
 }
 
-// Middleware pour gérer les messages d'erreur CSRF
+// Middleware pour gérer les erreurs de jeton CSRF
 app.use(function (err, req, res, next) {
   if (err.code !== 'EBADCSRFTOKEN') return next(err);
+
+  // Journaliser l'erreur pour le débogage
   console.error('Jeton CSRF invalide:', err);
-  res.status(403).send('Formulaire invalide : Jeton CSRF invalide.');
+
+  const isAjaxRequest = req.xhr || req.headers.accept.indexOf('json') > -1;
+
+  const errorMessage =
+    'Votre session a expiré ou est invalide. Veuillez recharger la page et réessayer.';
+
+  if (isAjaxRequest) {
+    res.status(403).json({
+      success: false,
+      message: errorMessage,
+    });
+  } else {
+    res.status(403).render('csrfError', {
+      title: 'Erreur de sécurité',
+      message: errorMessage,
+    });
+  }
 });
 
 // Configuration de multer pour les téléchargements de fichiers
@@ -839,7 +863,8 @@ app.post(
   ],
   (req, res) => {
     const errors = validationResult(req);
-    const isAjaxRequest = req.xhr || req.headers.accept.indexOf('json') > -1;
+    const acceptHeader = req.headers.accept || '';
+    const isAjaxRequest = req.xhr || acceptHeader.indexOf('json') > -1;
 
     if (!errors.isEmpty()) {
       if (isAjaxRequest) {
