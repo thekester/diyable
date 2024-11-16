@@ -67,15 +67,13 @@ function csrfMiddleware(req, res, next) {
 app.use(function (err, req, res, next) {
   if (err.code !== 'EBADCSRFTOKEN') return next(err);
 
-  // Journaliser l'erreur pour le débogage
   console.error('Jeton CSRF invalide:', err);
-
-  const isAjaxRequest = req.xhr || req.headers.accept.indexOf('json') > -1;
 
   const errorMessage =
     'Votre session a expiré ou est invalide. Veuillez recharger la page et réessayer.';
 
-  if (isAjaxRequest) {
+  // Vérifier si la requête est vers une route API
+  if (req.path.startsWith('/comments') || req.path.startsWith('/react') || req.path.startsWith('/projets')) {
     res.status(403).json({
       success: false,
       message: errorMessage,
@@ -87,6 +85,7 @@ app.use(function (err, req, res, next) {
     });
   }
 });
+
 
 // Configuration de multer pour les téléchargements de fichiers
 const storage = multer.diskStorage({
@@ -1154,15 +1153,16 @@ app.post(
     body('projectId').isInt().withMessage('ID de projet invalide.'),
   ],
   (req, res) => {
+    console.log('Requête reçue pour /comments');
+    console.log('En-têtes de la requête:', req.headers);
+    console.log('Jeton CSRF reçu:', req.headers['x-csrf-token']);
+    console.log('Session utilisateur:', req.session);
+
     const errors = validationResult(req);
-    const isAjaxRequest = req.xhr || req.headers.accept.indexOf('json') > -1;
 
     if (!errors.isEmpty()) {
-      if (isAjaxRequest) {
-        return res.status(400).json({ success: false, errors: errors.array() });
-      } else {
-        return res.status(400).send('Données invalides.');
-      }
+      // Renvoyer toujours du JSON en cas d'erreur de validation
+      return res.status(400).json({ success: false, errors: errors.array() });
     }
 
     const { comment, projectId } = req.body;
@@ -1176,13 +1176,9 @@ app.post(
       function (err) {
         if (err) {
           console.error("Erreur lors de l'ajout du commentaire:", err.message);
-          if (isAjaxRequest) {
-            return res
-              .status(500)
-              .json({ success: false, message: "Erreur lors de l'ajout du commentaire." });
-          } else {
-            return res.status(500).send("Erreur lors de l'ajout du commentaire.");
-          }
+          return res
+            .status(500)
+            .json({ success: false, message: "Erreur lors de l'ajout du commentaire." });
         } else {
           // Récupérer le commentaire ajouté avec le username
           const commentId = this.lastID;
@@ -1195,26 +1191,18 @@ app.post(
           db.get(getCommentQuery, [commentId], (err, newComment) => {
             if (err) {
               console.error('Erreur lors de la récupération du commentaire:', err.message);
-              if (isAjaxRequest) {
-                return res
-                  .status(500)
-                  .json({ success: false, message: "Erreur lors de la récupération du commentaire." });
-              } else {
-                return res.status(500).send("Erreur lors de la récupération du commentaire.");
-              }
+              return res
+                .status(500)
+                .json({ success: false, message: "Erreur lors de la récupération du commentaire." });
             } else {
               // Ajouter des informations supplémentaires nécessaires pour le front-end
               newComment.canDelete = true; // L'utilisateur peut supprimer son propre commentaire
               newComment.reactions = {}; // Pas de réactions initialement
-              if (isAjaxRequest) {
-                return res.json({
-                  success: true,
-                  message: 'Commentaire ajouté avec succès.',
-                  comment: newComment,
-                });
-              } else {
-                res.redirect(`/projets/${projectId}`);
-              }
+              return res.json({
+                success: true,
+                message: 'Commentaire ajouté avec succès.',
+                comment: newComment,
+              });
             }
           });
         }
@@ -1222,6 +1210,7 @@ app.post(
     );
   }
 );
+
 
 // Route pour gérer les réactions aux commentaires
 app.post('/react/:commentId', isAuthenticated, csrfMiddleware, (req, res) => {

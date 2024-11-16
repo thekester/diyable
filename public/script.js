@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const csrfTokenMeta = document.querySelector('meta[name="csrf-token"]');
   const csrfToken = csrfTokenMeta ? csrfTokenMeta.getAttribute('content') : '';
 
-  // **Dark Mode Implementation**
+  // **Implémentation du Mode Sombre**
 
   // Sélectionner la case à cocher du mode sombre
   const darkModeToggle = document.getElementById('dark-mode-toggle');
@@ -123,52 +123,82 @@ document.addEventListener('DOMContentLoaded', function () {
   // Gestion de l'affichage des commentaires des projets
   const commentForm = document.getElementById('commentForm');
   if (commentForm) {
-    commentForm.addEventListener('submit', function (event) {
-      event.preventDefault(); // Empêche le rechargement de la page
+    if (!commentForm.classList.contains('listener-attached')) {
+      commentForm.addEventListener('submit', function (event) {
+        event.preventDefault(); // Empêche le rechargement de la page
+        console.log('Formulaire soumis');
 
-      const formData = new FormData(commentForm);
-      const data = {
-        comment: formData.get('comment'),
-        projectId: formData.get('projectId'),
-      };
-      const csrfToken = formData.get('_csrf'); // Récupérer le jeton CSRF à partir du formulaire
+        // Désactiver le bouton de soumission pour éviter les doubles clics
+        const submitButton = commentForm.querySelector('button[type="submit"]');
+        if (submitButton) {
+          submitButton.disabled = true;
+        }
 
-      fetch('/comments', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-Token': csrfToken, // Utiliser le jeton CSRF récupéré
-        },
-        body: JSON.stringify(data),
-        credentials: 'include', // Inclure les cookies de session
-      })
-        .then((response) => {
-          if (!response.ok) {
-            return response
-              .json()
-              .then((data) => {
-                throw data;
-              })
-              .catch(() => {
-                throw new Error("Erreur lors de l'ajout du commentaire.");
-              });
-          }
-          return response.json();
-        })
-        .then((data) => {
-          if (data.success) {
-            // Ajouter le nouveau commentaire au DOM sans recharger la page
-            addCommentToDOM(data.comment);
-            // Réinitialiser le formulaire
-            commentForm.reset();
-          } else {
-            console.error("Erreur lors de l'ajout du commentaire:", data.message);
-          }
-        })
-        .catch((error) => {
-          console.error('Erreur réseau:', error);
-        });
-    });
+        const formData = new FormData(commentForm);
+        const data = {
+          comment: formData.get('comment'),
+          projectId: formData.get('projectId'),
+        };
+        const csrfToken = formData.get('_csrf'); // Récupérer le jeton CSRF à partir du formulaire
+
+        fetch('/comments', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': csrfToken,
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+          },
+          body: JSON.stringify(data),
+          credentials: 'include',
+        })        
+          .then((response) => {
+            return response.text().then((text) => {
+              // Tenter de parser le texte en JSON
+              let data;
+              try {
+                data = JSON.parse(text);
+              } catch (error) {
+                console.error('Erreur lors du parsing du JSON:', error);
+                console.error('Réponse non JSON:', text);
+                throw new Error('Réponse du serveur invalide.');
+              }
+
+              if (!response.ok) {
+                console.error('Erreur du serveur:', data);
+                throw new Error(data.message || 'Erreur lors de l\'ajout du commentaire.');
+              }
+
+              return data;
+            });
+          })
+          .then((data) => {
+            if (data.success) {
+              // Ajouter le nouveau commentaire au DOM sans recharger la page
+              addCommentToDOM(data.comment);
+              // Réinitialiser le formulaire
+              commentForm.reset();
+            } else {
+              console.error('Erreur lors de l\'ajout du commentaire:', data.message);
+              showNotification('error', data.message || 'Une erreur est survenue.');
+            }
+            if (submitButton) {
+              submitButton.disabled = false;
+            }
+          })
+          .catch((error) => {
+            console.error('Erreur réseau:', error);
+            showNotification('error', error.message || 'Une erreur est survenue lors de la publication du commentaire.');
+            if (submitButton) {
+              submitButton.disabled = false;
+            }
+          });
+      });
+      commentForm.classList.add('listener-attached');
+      console.log('Écouteur d\'événement ajouté au formulaire de commentaire');
+    } else {
+      console.log('Écouteur déjà attaché au formulaire de commentaire');
+    }
   }
 
   // Fonction pour ajouter un commentaire au DOM
@@ -258,23 +288,23 @@ document.addEventListener('DOMContentLoaded', function () {
       credentials: 'include', // Inclure les cookies de session
     })
       .then((response) => {
-        if (!response.ok) {
-          if (response.status === 403) {
-            return response
-              .json()
-              .then((data) => {
-                throw new Error(data.message || 'Erreur de sécurité. Veuillez recharger la page.');
-              })
-              .catch(() => {
-                throw new Error('Erreur de sécurité. Veuillez recharger la page.');
-              });
-          } else {
-            return response.text().then((text) => {
-              throw new Error(text || 'Erreur lors de la mise à jour de la réaction.');
-            });
+        return response.text().then((text) => {
+          let data;
+          try {
+            data = JSON.parse(text);
+          } catch (error) {
+            console.error('Erreur lors du parsing du JSON:', error);
+            console.error('Réponse non JSON:', text);
+            throw new Error('Réponse du serveur invalide.');
           }
-        }
-        return response.json();
+
+          if (!response.ok) {
+            console.error('Erreur du serveur:', data);
+            throw new Error(data.message || 'Erreur lors de la mise à jour de la réaction.');
+          }
+
+          return data;
+        });
       })
       .then((data) => {
         if (data.success) {
@@ -365,13 +395,14 @@ document.addEventListener('DOMContentLoaded', function () {
         credentials: 'include', // Inclure les cookies de session
       })
         .then((response) => {
-          if (response.ok) {
-            window.location.href = '/projets';
-          } else {
-            return response.text().then((text) => {
-              throw new Error(text);
-            });
-          }
+          return response.text().then((text) => {
+            if (response.ok) {
+              window.location.href = '/projets';
+            } else {
+              console.error('Erreur du serveur:', text);
+              throw new Error(text || 'Erreur lors de la suppression du projet.');
+            }
+          });
         })
         .catch((error) => {
           console.error('Erreur lors de la suppression du projet :', error);
@@ -498,27 +529,26 @@ document.addEventListener('DOMContentLoaded', function () {
         credentials: 'include',
       })
         .then((response) => {
-          // Ajouter des logs pour le statut et les en-têtes de la réponse
-          console.log('Response Status:', response.status);
-          console.log('Response Headers:', [...response.headers.entries()]);
-
-          // Lire le corps de la réponse sous forme de texte
           return response.text().then((text) => {
+            console.log('Response Status:', response.status);
+            console.log('Response Headers:', [...response.headers.entries()]);
             console.log('Response Body:', text);
 
-            if (!response.ok) {
-              // Tenter de parser le texte en JSON
-              try {
-                const data = JSON.parse(text);
-                throw data;
-              } catch (error) {
-                // Si le parsing échoue, lancer une erreur avec le texte brut
-                throw new Error(text || 'Erreur lors de la connexion.');
-              }
-            } else {
-              // Si la réponse est OK, parser le JSON
-              return JSON.parse(text);
+            let data;
+            try {
+              data = JSON.parse(text);
+            } catch (error) {
+              console.error('Erreur lors du parsing du JSON:', error);
+              console.error('Réponse non JSON:', text);
+              throw new Error('Réponse du serveur invalide.');
             }
+
+            if (!response.ok) {
+              console.error('Erreur du serveur:', data);
+              throw new Error(data.message || 'Erreur lors de la connexion.');
+            }
+
+            return data;
           });
         })
         .then((data) => {
@@ -569,17 +599,23 @@ document.addEventListener('DOMContentLoaded', function () {
         credentials: 'include', // Inclure les cookies de session
       })
         .then((response) => {
-          if (!response.ok) {
-            return response
-              .json()
-              .then((data) => {
-                throw data;
-              })
-              .catch(() => {
-                throw new Error('Erreur lors de la création du compte.');
-              });
-          }
-          return response.json();
+          return response.text().then((text) => {
+            let data;
+            try {
+              data = JSON.parse(text);
+            } catch (error) {
+              console.error('Erreur lors du parsing du JSON:', error);
+              console.error('Réponse non JSON:', text);
+              throw new Error('Réponse du serveur invalide.');
+            }
+
+            if (!response.ok) {
+              console.error('Erreur du serveur:', data);
+              throw new Error(data.message || 'Erreur lors de la création du compte.');
+            }
+
+            return data;
+          });
         })
         .then((data) => {
           if (data.success) {
@@ -633,17 +669,23 @@ document.addEventListener('DOMContentLoaded', function () {
         credentials: 'include', // Inclure les cookies de session
       })
         .then((response) => {
-          if (!response.ok) {
-            return response
-              .json()
-              .then((data) => {
-                throw data;
-              })
-              .catch(() => {
-                throw new Error('Erreur lors du changement de mot de passe.');
-              });
-          }
-          return response.json();
+          return response.text().then((text) => {
+            let data;
+            try {
+              data = JSON.parse(text);
+            } catch (error) {
+              console.error('Erreur lors du parsing du JSON:', error);
+              console.error('Réponse non JSON:', text);
+              throw new Error('Réponse du serveur invalide.');
+            }
+
+            if (!response.ok) {
+              console.error('Erreur du serveur:', data);
+              throw new Error(data.message || 'Erreur lors du changement de mot de passe.');
+            }
+
+            return data;
+          });
         })
         .then((data) => {
           if (data.success) {
