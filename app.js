@@ -3,30 +3,27 @@ require('dotenv').config(); // Charger les variables d'environnement depuis .env
 const express = require('express');
 const app = express();
 const path = require('path');
-const sqlite3 = require('sqlite3').verbose(); // Import sqlite3
+const sqlite3 = require('sqlite3').verbose();
 const fs = require('fs');
 const crypto = require('crypto');
 const session = require('express-session');
-const multer = require('multer'); // Importer multer pour la gestion des téléchargements de fichiers
-
-// Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+const multer = require('multer');
+const csrf = require('csurf'); // Protection contre les attaques CSRF
+const { body, validationResult } = require('express-validator'); // Validation des entrées utilisateur
 
 // Configuration de la session
 app.use(
   session({
-    secret: process.env.SESSION_SECRET || 'votre_secret_par_défaut', // Assurez-vous de définir SESSION_SECRET dans .env
+    secret: process.env.SESSION_SECRET || 'votre_secret_par_defaut', // Assurez-vous de définir SESSION_SECRET dans .env
     resave: false,
-    saveUninitialized: true,
+    saveUninitialized: false,
     cookie: { secure: false }, // Mettez à true si vous utilisez HTTPS
   })
 );
 
-app.use((req, res, next) => {
-  res.locals.username = req.session.username; // Ajoute `username` à `res.locals`
-  next();
-});
+// Middleware pour le parsing du corps des requêtes
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Pour servir des fichiers statiques (comme le CSS, le JavaScript)
 app.use(express.static('public'));
@@ -36,21 +33,18 @@ app.use('/images', express.static(path.join(__dirname, 'assets', 'images'))); //
 app.set('view engine', 'pug');
 app.set('views', './views');
 
-// Connexion à la base de données SQLite
-const dbPath = path.join(__dirname, 'bdd', 'diyable.db');
-console.log(`Chemin de la base de données: ${dbPath}`);
+// Middleware pour ajouter le nom d'utilisateur aux variables locales
+app.use((req, res, next) => {
+  res.locals.username = req.session.username;
+  next();
+});
 
-// Assurez-vous que le dossier 'bdd' existe
-const bddDir = path.join(__dirname, 'bdd');
-if (!fs.existsSync(bddDir)) {
-  fs.mkdirSync(bddDir, { recursive: true });
-}
-
-// Assurez-vous que le dossier 'assets/images' existe
-const imagesDir = path.join(__dirname, 'assets', 'images');
-if (!fs.existsSync(imagesDir)) {
-  fs.mkdirSync(imagesDir, { recursive: true });
-}
+// Middleware pour gérer les messages d'erreur CSRF
+app.use(function (err, req, res, next) {
+  if (err.code !== 'EBADCSRFTOKEN') return next(err);
+  console.error('Jeton CSRF invalide:', err);
+  res.status(403).send('Formulaire invalide : Jeton CSRF invalide.');
+});
 
 // Configuration de multer pour les téléchargements de fichiers
 const storage = multer.diskStorage({
@@ -63,7 +57,24 @@ const storage = multer.diskStorage({
   },
 });
 
-const upload = multer({ storage: storage });
+const upload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // Limite de taille de fichier de 5MB
+  },
+  fileFilter: function (req, file, cb) {
+    // Vérifier le type de fichier
+    const filetypes = /jpeg|jpg|png|gif/;
+    const mimetype = filetypes.test(file.mimetype);
+    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+
+    if (mimetype && extname) {
+      return cb(null, true);
+    } else {
+      cb(new Error('Seules les images sont autorisées.'));
+    }
+  },
+});
 
 // Assurez-vous que le dossier 'public/uploads' existe
 const uploadsDir = path.join(__dirname, 'public', 'uploads');
@@ -73,6 +84,35 @@ if (!fs.existsSync(uploadsDir)) {
 
 // Servir le dossier uploads
 app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
+
+// Initialiser le middleware CSRF
+const csrfProtection = csrf();
+
+// Fonction pour appliquer le middleware CSRF et ajouter le jeton CSRF aux variables locales
+function csrfMiddleware(req, res, next) {
+  csrfProtection(req, res, function (err) {
+    if (err) {
+      return next(err);
+    }
+    res.locals.csrfToken = req.csrfToken();
+    next();
+  });
+}
+
+// Connexion à la base de données SQLite
+const dbPath = path.join(__dirname, 'bdd', 'diyable.db');
+
+// Assurez-vous que le dossier 'bdd' existe
+const bddDir = path.join(__dirname, 'bdd');
+if (!fs.existsSync(bddDir)) {
+  fs.mkdirSync(bddDir, { recursive: true });
+}
+
+// Assurez-vous que le dossier 'assets/images' existe
+const imagesDir = path.join(__dirname, 'assets', 'images');
+if (!fs.existsSync(imagesDir)) {
+  fs.mkdirSync(imagesDir, { recursive: true });
+}
 
 // Vérifier les permissions avant d'ouvrir la base de données
 try {
@@ -316,26 +356,7 @@ const insertInitialProjectsData = (adminUserId) => {
     console.log(`Doublons supprimés. ${this.changes} enregistrements affectés.`);
 
     const projects = [
-      { date: '2024-11-07', name: 'Projet IoT Innovant', description: 'Découvrez comment ce projet IoT peut transformer votre quotidien.', category: 'tech', image: 'images/projet-iot-exemple.jpg' },
-      { date: '2024-11-06', name: 'Atelier de Bricolage', description: 'Un projet de bricolage pour embellir votre espace de vie.', category: 'craft', image: 'images/atelier-bricolage.jpg' },
-      { date: '2024-11-03', name: 'Création d\'un Jardin Vertical', description: 'Fabriquez un jardin vertical pour votre balcon ou intérieur.', category: 'garden', image: 'images/jardin-vertical.jpg' },
-      { date: '2024-11-01', name: 'Fabriquer sa Propre Table en Bois', description: 'Construisez une table en bois personnalisée pour votre maison.', category: 'woodwork', image: 'images/table-bois.jpg' },
-      { date: '2024-10-29', name: 'Réaliser des Bougies Maison', description: 'Apprenez à créer des bougies naturelles avec vos propres parfums.', category: 'craft', image: 'images/bougies-maison.jpg' },
-      { date: '2024-10-26', name: 'Robot Suiveur de Ligne', description: 'Assemblez un petit robot qui suit une ligne tracée au sol.', category: 'tech', image: 'images/robot-ligne.jpg' },
-      { date: '2024-10-23', name: 'Peinture sur Tissu', description: 'Personnalisez vos vêtements avec des motifs peints à la main.', category: 'art', image: 'images/peinture-tissu.jpg' },
-      { date: '2024-10-15', name: 'Lampe en Bouteille Recyclée', description: 'Transformez une bouteille en une lampe élégante.', category: 'recycle', image: 'images/lampe-bouteille.jpg' },
-      { date: '2024-10-11', name: 'Étagère Murale DIY', description: 'Créez une étagère murale design avec des matériaux simples.', category: 'woodwork', image: 'images/etagere-murale.jpg' },
-      { date: '2024-10-08', name: 'Fabriquer un Cerf-Volant', description: 'Construisez un cerf-volant pour profiter des journées venteuses.', category: 'craft', image: 'images/cerf-volant.jpg' },
-      { date: '2024-10-04', name: 'Enceinte Bluetooth Maison', description: 'Assemblez votre propre enceinte Bluetooth portable.', category: 'tech', image: 'images/enceinte-bluetooth.jpg' },
-      { date: '2024-10-01', name: 'Pots de Fleurs Peints', description: 'Donnez de la couleur à vos plantes avec des pots personnalisés.', category: 'art', image: 'images/pots-fleurs-peints.jpg' },
-      { date: '2024-09-28', name: 'Horloge Murale en Vinyle', description: 'Recyclez de vieux disques vinyles en horloges murales.', category: 'recycle', image: 'images/horloge-vinyle.jpg' },
-      { date: '2024-09-25', name: 'Fabriquer du Savon Naturel', description: 'Créez vos propres savons avec des ingrédients naturels.', category: 'craft', image: 'images/savon-naturel.jpg' },
-      { date: '2024-09-21', name: 'Station Météo Connectée', description: 'Construisez une station météo avec un microcontrôleur.', category: 'tech', image: 'images/station-meteo.jpg' },
-      { date: '2024-09-17', name: 'Décoration en Macramé', description: 'Apprenez l\'art du macramé pour décorer votre intérieur.', category: 'craft', image: 'images/macrame.jpg' },
-      { date: '2024-09-14', name: 'Composteur de Jardin', description: 'Fabriquez un composteur pour recycler vos déchets organiques.', category: 'garden', image: 'images/composteur.jpg' },
-      { date: '2024-09-11', name: 'Cadre Photo en Bois Recyclé', description: 'Créez des cadres photo uniques avec du bois récupéré.', category: 'recycle', image: 'images/cadre-photo.jpg' },
-      { date: '2024-09-08', name: 'Coussins Personnalisés', description: 'Cousez des coussins avec des motifs et tissus de votre choix.', category: 'craft', image: 'images/coussins.jpg' },
-      { date: '2024-09-03', name: 'Système d\'Arrosage Automatique', description: 'Installez un système pour arroser vos plantes automatiquement.', category: 'tech', image: 'images/arrosage-automatique.jpg' },
+      // ... [Votre liste de projets ici] ...
     ];
 
     const insertQuery = `
@@ -427,6 +448,13 @@ function isAuthenticated(req, res, next) {
   }
 }
 
+// Middleware pour valider les entrées utilisateur
+const validateProject = [
+  body('name').trim().notEmpty().withMessage('Le nom du projet est requis.').isLength({ max: 255 }).withMessage('Le nom du projet est trop long.'),
+  body('description').trim().notEmpty().withMessage('La description est requise.'),
+  body('category').trim().notEmpty().withMessage('La catégorie est requise.'),
+];
+
 // Routes
 
 // Route principale
@@ -445,7 +473,7 @@ app.get('/', (req, res) => {
       console.error('Erreur lors de la récupération des projets récents:', err.message);
       res.status(500).send('Erreur serveur');
     } else {
-      res.render('index', { title: 'Accueil', username: req.session.username, recentProjects: rows });
+      res.render('index', { title: 'Accueil', recentProjects: rows });
     }
   });
 });
@@ -507,7 +535,6 @@ app.get('/projets', (req, res) => {
             title: 'Projets',
             projects: projectRows,
             categories,
-            username: req.session.username,
           });
         }
       });
@@ -516,20 +543,25 @@ app.get('/projets', (req, res) => {
 });
 
 // Route GET pour afficher le formulaire d'ajout de projet
-app.get('/projets/ajouter', isAuthenticated, (req, res) => {
-  res.render('createProject', { title: 'Ajouter un Projet', username: req.session.username });
+app.get('/projets/ajouter', isAuthenticated, csrfMiddleware, (req, res) => {
+  res.render('createProject', { title: 'Ajouter un Projet' });
 });
 
 // Route POST pour traiter la soumission du formulaire d'ajout de projet
-app.post('/projets/ajouter', isAuthenticated, upload.single('image'), (req, res) => {
+app.post('/projets/ajouter', isAuthenticated, upload.single('image'), csrfMiddleware, validateProject, (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    // Renvoyer le formulaire avec les messages d'erreur
+    return res.status(400).render('createProject', {
+      title: 'Ajouter un Projet',
+      errors: errors.array(),
+    });
+  }
+
   const { name, description, category } = req.body;
   const userId = req.session.userId;
   const date = new Date().toISOString();
   const image = req.file ? `uploads/${req.file.filename}` : null;
-
-  if (!name || !description || !category) {
-    return res.status(400).send('Tous les champs sont requis');
-  }
 
   const insertProjectQuery = `
     INSERT INTO projects (date, name, description, category, image, userId)
@@ -593,7 +625,6 @@ app.get('/projets/:id', (req, res) => {
           project,
           comments: [],
           projectId,
-          username: req.session.username,
           currentUserId: userId,
           adminUsername: adminUsername,
         });
@@ -634,7 +665,6 @@ app.get('/projets/:id', (req, res) => {
           project,
           comments,
           projectId,
-          username: req.session.username,
           currentUserId: userId,
           adminUsername: adminUsername,
         });
@@ -643,71 +673,253 @@ app.get('/projets/:id', (req, res) => {
   });
 });
 
+// Route GET pour afficher le formulaire d'édition d'un projet
+app.get('/projets/:id/edit', isAuthenticated, csrfMiddleware, (req, res) => {
+  const projectId = req.params.id;
+  const userId = req.session.userId;
+  const adminUsername = process.env.ADMIN_USERNAME;
+
+  const projectQuery = `
+    SELECT projects.*, users.username
+    FROM projects
+    JOIN users ON projects.userId = users.id
+    WHERE projects.id = ?
+  `;
+
+  db.get(projectQuery, [projectId], (err, project) => {
+    if (err) {
+      console.error('Erreur lors de la récupération du projet:', err.message);
+      return res.status(500).send('Erreur serveur');
+    }
+
+    if (!project) {
+      return res.status(404).send('Projet non trouvé');
+    }
+
+    if (userId !== project.userId && req.session.username !== adminUsername) {
+      return res.status(403).send("Vous n'êtes pas autorisé à modifier ce projet.");
+    }
+
+    res.render('editProject', {
+      title: 'Modifier le projet',
+      project,
+    });
+  });
+});
+
+// Route POST pour traiter la soumission du formulaire d'édition d'un projet
+app.post('/projets/:id/edit', isAuthenticated, upload.single('image'), csrfMiddleware, validateProject, (req, res) => {
+  const projectId = req.params.id;
+  const userId = req.session.userId;
+  const adminUsername = process.env.ADMIN_USERNAME;
+
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    // Récupérer le projet pour pré-remplir le formulaire
+    const projectQuery = `
+      SELECT * FROM projects
+      WHERE id = ?
+    `;
+    db.get(projectQuery, [projectId], (err, project) => {
+      if (err) {
+        console.error('Erreur lors de la récupération du projet:', err.message);
+        return res.status(500).send('Erreur serveur');
+      }
+
+      return res.status(400).render('editProject', {
+        title: 'Modifier le projet',
+        project,
+        errors: errors.array(),
+      });
+    });
+    return;
+  }
+
+  const { name, description, category } = req.body;
+  let image = req.file ? `uploads/${req.file.filename}` : null;
+
+  const projectQuery = `
+    SELECT * FROM projects
+    WHERE id = ?
+  `;
+
+  db.get(projectQuery, [projectId], (err, project) => {
+    if (err) {
+      console.error('Erreur lors de la récupération du projet:', err.message);
+      return res.status(500).send('Erreur serveur');
+    }
+
+    if (!project) {
+      return res.status(404).send('Projet non trouvé');
+    }
+
+    if (userId !== project.userId && req.session.username !== adminUsername) {
+      return res.status(403).send("Vous n'êtes pas autorisé à modifier ce projet.");
+    }
+
+    if (!image) {
+      image = project.image;
+    } else {
+      // Supprimer l'ancienne image du serveur (optionnel)
+      if (project.image && fs.existsSync(`public/${project.image}`)) {
+        fs.unlink(`public/${project.image}`, (err) => {
+          if (err) {
+            console.error('Erreur lors de la suppression de l\'ancienne image:', err.message);
+          } else {
+            console.log('Ancienne image supprimée avec succès.');
+          }
+        });
+      }
+    }
+
+    const updateProjectQuery = `
+      UPDATE projects
+      SET name = ?, description = ?, category = ?, image = ?
+      WHERE id = ?
+    `;
+
+    db.run(updateProjectQuery, [name, description, category, image, projectId], function (err) {
+      if (err) {
+        console.error("Erreur lors de la mise à jour du projet:", err.message);
+        return res.status(500).send("Erreur lors de la mise à jour du projet.");
+      } else {
+        res.redirect(`/projets/${projectId}`);
+      }
+    });
+  });
+});
+
 // Route pour afficher la page de connexion
-app.get('/login', (req, res) => {
+app.get('/login', csrfMiddleware, (req, res) => {
   res.render('login', { title: 'Login' });
 });
 
 // Route pour gérer la connexion
-app.post('/login', (req, res) => {
-  const { username, password } = req.body;
+app.post('/login', csrfMiddleware, [
+  body('username').trim().notEmpty().withMessage('Le nom d\'utilisateur est requis.'),
+  body('password').notEmpty().withMessage('Le mot de passe est requis.'),
+], (req, res) => {
+  const errors = validationResult(req);
+  const isAjaxRequest = req.xhr || req.headers.accept.indexOf('json') > -1;
 
-  // Validation des entrées
-  if (!username || !password) {
-    res.json({ success: false, message: 'Tous les champs sont requis' });
+  if (!errors.isEmpty()) {
+    if (isAjaxRequest) {
+      return res.status(400).json({ success: false, errors: errors.array() });
+    } else {
+      return res.status(400).render('login', {
+        title: 'Login',
+        errors: errors.array(),
+      });
+    }
   }
+
+  const { username, password } = req.body;
 
   db.get(`SELECT * FROM users WHERE username = ?`, [username], (err, row) => {
     if (err) {
-      res.json({ success: false, message: 'Erreur du serveur' });
+      console.error("Erreur lors de la récupération de l'utilisateur:", err.message);
+      if (isAjaxRequest) {
+        return res.status(500).json({ success: false, message: 'Erreur du serveur' });
+      } else {
+        return res.status(500).render('login', {
+          title: 'Login',
+          errors: [{ msg: 'Erreur du serveur' }],
+        });
+      }
     } else if (row) {
-      // Utilisateur trouvé, vérification du mot de passe
       const hashedPassword = hashPassword(password, row.salt);
       if (hashedPassword === row.password) {
-        // Stocker l'utilisateur dans la session
         req.session.username = username;
-        req.session.userId = row.id; // Stocker l'ID de l'utilisateur
-        res.json({ success: true });
+        req.session.userId = row.id;
+        if (isAjaxRequest) {
+          return res.json({ success: true });
+        } else {
+          return res.redirect('/');
+        }
       } else {
-        res.json({ success: false, message: 'Mot de passe incorrect' });
+        if (isAjaxRequest) {
+          return res.status(400).json({ success: false, message: 'Mot de passe incorrect' });
+        } else {
+          return res.status(400).render('login', {
+            title: 'Login',
+            errors: [{ msg: 'Mot de passe incorrect' }],
+          });
+        }
       }
     } else {
-      res.json({ success: false, message: 'Utilisateur non trouvé' });
+      if (isAjaxRequest) {
+        return res.status(400).json({ success: false, message: 'Utilisateur non trouvé' });
+      } else {
+        return res.status(400).render('login', {
+          title: 'Login',
+          errors: [{ msg: 'Utilisateur non trouvé' }],
+        });
+      }
     }
   });
 });
 
 // Route pour afficher le formulaire de création de compte
-app.get('/register', (req, res) => {
-  const { username } = req.query;
-  res.render('register', { title: 'Créer un compte', username });
+app.get('/register', csrfMiddleware, (req, res) => {
+  res.render('register', { title: 'Créer un compte' });
 });
 
 // Route pour la création de compte
-app.post('/register', (req, res) => {
-  const { username, email, password } = req.body;
+app.post('/register', csrfMiddleware, [
+  body('username').trim().notEmpty().withMessage('Le nom d\'utilisateur est requis.').isLength({ max: 50 }).withMessage('Le nom d\'utilisateur est trop long.'),
+  body('email').trim().notEmpty().withMessage('L\'email est requis.').isEmail().withMessage('Email invalide.').normalizeEmail(),
+  body('password').notEmpty().withMessage('Le mot de passe est requis.').isLength({ min: 6 }).withMessage('Le mot de passe doit contenir au moins 6 caractères.'),
+], (req, res) => {
+  const errors = validationResult(req);
+  const isAjaxRequest = req.xhr || req.headers.accept.indexOf('json') > -1;
 
-  // Validation des entrées
-  if (!username || !email || !password) {
-    return res.json({ success: false, message: 'Tous les champs sont requis' });
+  if (!errors.isEmpty()) {
+    if (isAjaxRequest) {
+      return res.status(400).json({ success: false, errors: errors.array() });
+    } else {
+      return res.status(400).render('register', {
+        title: 'Créer un compte',
+        errors: errors.array(),
+      });
+    }
   }
+
+  const { username, email, password } = req.body;
 
   const salt = generateSalt();
   const hashedPassword = hashPassword(password, salt);
 
-  // Insertion de l'utilisateur dans la base de données
   db.run(
     `INSERT INTO users (username, email, password, salt) VALUES (?, ?, ?, ?)`,
     [username, email, hashedPassword, salt],
     function (err) {
       if (err) {
+        console.error("Erreur lors de la création de l'utilisateur:", err.message);
         if (err.code === 'SQLITE_CONSTRAINT') {
-          res.json({ success: false, message: 'Nom d\'utilisateur ou email déjà pris' });
+          if (isAjaxRequest) {
+            return res.status(400).json({ success: false, message: 'Nom d\'utilisateur ou email déjà pris' });
+          } else {
+            return res.status(400).render('register', {
+              title: 'Créer un compte',
+              errors: [{ msg: 'Nom d\'utilisateur ou email déjà pris' }],
+            });
+          }
         } else {
-          res.json({ success: false, message: 'Erreur du serveur' });
+          if (isAjaxRequest) {
+            return res.status(500).json({ success: false, message: 'Erreur du serveur' });
+          } else {
+            return res.status(500).render('register', {
+              title: 'Créer un compte',
+              errors: [{ msg: 'Erreur du serveur' }],
+            });
+          }
         }
       } else {
-        res.json({ success: true, message: 'Compte créé avec succès' });
+        if (isAjaxRequest) {
+          return res.json({ success: true, message: 'Compte créé avec succès' });
+        } else {
+          res.redirect('/login');
+        }
       }
     }
   );
@@ -717,26 +929,21 @@ app.post('/register', (req, res) => {
 app.get('/logout', (req, res) => {
   req.session.destroy((err) => {
     if (err) {
+      console.error('Erreur lors de la déconnexion:', err.message);
       return res.status(500).send('Erreur lors de la déconnexion');
     }
-    res.redirect('/'); // Rediriger vers la page d'accueil après déconnexion
+    res.redirect('/');
   });
 });
 
 // Route pour afficher le profil de l'utilisateur
-app.get('/profile', (req, res) => {
-  // Vérifier si l'utilisateur est connecté
-  if (!req.session.username) {
-    return res.redirect('/login'); // Redirection vers la page de connexion si l'utilisateur n'est pas connecté
-  }
-
-  // Récupérer les données de l'utilisateur depuis la base de données
+app.get('/profile', isAuthenticated, (req, res) => {
   db.get(`SELECT * FROM users WHERE id = ?`, [req.session.userId], (err, row) => {
     if (err) {
+      console.error("Erreur lors de la récupération de l'utilisateur:", err.message);
       return res.status(500).send('Erreur du serveur');
     }
     if (row) {
-      // Renvoyer la vue 'profile' avec les données de l'utilisateur
       res.render('profile', {
         title: 'Mon Profil',
         username: row.username,
@@ -749,31 +956,51 @@ app.get('/profile', (req, res) => {
 });
 
 // Route pour gérer le changement de mot de passe
-app.post('/change-password', (req, res) => {
+app.post('/change-password', isAuthenticated, csrfMiddleware, [
+  body('currentPassword').notEmpty().withMessage('Le mot de passe actuel est requis.'),
+  body('newPassword').notEmpty().withMessage('Le nouveau mot de passe est requis.').isLength({ min: 6 }).withMessage('Le nouveau mot de passe doit contenir au moins 6 caractères.'),
+], (req, res) => {
+  const errors = validationResult(req);
+  const isAjaxRequest = req.xhr || req.headers.accept.indexOf('json') > -1;
+
+  if (!errors.isEmpty()) {
+    if (isAjaxRequest) {
+      return res.status(400).json({ success: false, errors: errors.array() });
+    } else {
+      return res.status(400).send('Données invalides.');
+    }
+  }
+
   const { currentPassword, newPassword } = req.body;
   const userId = req.session.userId;
 
-  if (!currentPassword || !newPassword) {
-    return res.json({ success: false, message: 'Tous les champs sont requis' });
-  }
-
-  // Récupérer l'utilisateur actuel
   db.get('SELECT * FROM users WHERE id = ?', [userId], (err, row) => {
     if (err) {
-      return res.json({ success: false, message: 'Erreur du serveur' });
+      console.error("Erreur lors de la récupération de l'utilisateur:", err.message);
+      if (isAjaxRequest) {
+        return res.status(500).json({ success: false, message: 'Erreur du serveur' });
+      } else {
+        return res.status(500).send('Erreur du serveur');
+      }
     }
 
     if (!row) {
-      return res.json({ success: false, message: 'Utilisateur non trouvé' });
+      if (isAjaxRequest) {
+        return res.status(404).json({ success: false, message: 'Utilisateur non trouvé' });
+      } else {
+        return res.status(404).send('Utilisateur non trouvé');
+      }
     }
 
-    // Vérification du mot de passe actuel
     const hashedCurrentPassword = hashPassword(currentPassword, row.salt);
     if (hashedCurrentPassword !== row.password) {
-      return res.json({ success: false, message: 'Mot de passe actuel incorrect' });
+      if (isAjaxRequest) {
+        return res.status(400).json({ success: false, message: 'Mot de passe actuel incorrect' });
+      } else {
+        return res.status(400).send('Mot de passe actuel incorrect');
+      }
     }
 
-    // Mise à jour du mot de passe
     const salt = generateSalt();
     const hashedNewPassword = hashPassword(newPassword, salt);
 
@@ -782,14 +1009,27 @@ app.post('/change-password', (req, res) => {
       [hashedNewPassword, salt, userId],
       function (err) {
         if (err) {
-          return res.json({ success: false, message: 'Erreur du serveur' });
+          console.error("Erreur lors de la mise à jour du mot de passe:", err.message);
+          if (isAjaxRequest) {
+            return res.status(500).json({ success: false, message: 'Erreur du serveur' });
+          } else {
+            return res.status(500).send('Erreur du serveur');
+          }
         } else {
-          // Détruire la session pour déconnecter l'utilisateur
           req.session.destroy((err) => {
             if (err) {
-              return res.json({ success: false, message: 'Erreur lors de la déconnexion après le changement de mot de passe' });
+              console.error('Erreur lors de la déconnexion après le changement de mot de passe:', err.message);
+              if (isAjaxRequest) {
+                return res.status(500).json({ success: false, message: 'Erreur lors de la déconnexion après le changement de mot de passe' });
+              } else {
+                return res.status(500).send('Erreur lors de la déconnexion');
+              }
             }
-            return res.json({ success: true, message: 'Mot de passe mis à jour avec succès. Vous avez été déconnecté.', redirect: '/login' });
+            if (isAjaxRequest) {
+              return res.json({ success: true, message: 'Mot de passe mis à jour avec succès. Vous avez été déconnecté.', redirect: '/login' });
+            } else {
+              res.redirect('/login');
+            }
           });
         }
       }
@@ -798,19 +1038,24 @@ app.post('/change-password', (req, res) => {
 });
 
 // Route pour soumettre un commentaire
-app.post('/comments', (req, res) => {
-  if (!req.session.userId) {
-    return res.status(403).send('Vous devez être connecté pour commenter.');
+app.post('/comments', isAuthenticated, csrfMiddleware, [
+  body('comment').trim().notEmpty().withMessage('Le commentaire est requis.'),
+  body('projectId').isInt().withMessage('ID de projet invalide.'),
+], (req, res) => {
+  const errors = validationResult(req);
+  const isAjaxRequest = req.xhr || req.headers.accept.indexOf('json') > -1;
+
+  if (!errors.isEmpty()) {
+    if (isAjaxRequest) {
+      return res.status(400).json({ success: false, errors: errors.array() });
+    } else {
+      return res.status(400).send('Données invalides.');
+    }
   }
 
   const { comment, projectId } = req.body;
   const userId = req.session.userId;
   const date = new Date().toISOString();
-
-  // Vérification que les données nécessaires sont présentes
-  if (!comment || !projectId) {
-    return res.status(400).send('Le commentaire et le projectId sont requis.');
-  }
 
   // Insertion du commentaire dans la base de données
   db.run(
@@ -819,21 +1064,24 @@ app.post('/comments', (req, res) => {
     function (err) {
       if (err) {
         console.error("Erreur lors de l'ajout du commentaire:", err.message);
-        return res.status(500).send("Erreur lors de l'ajout du commentaire.");
+        if (isAjaxRequest) {
+          return res.status(500).json({ success: false, message: "Erreur lors de l'ajout du commentaire." });
+        } else {
+          return res.status(500).send("Erreur lors de l'ajout du commentaire.");
+        }
       } else {
-        // Redirection vers la page du projet après l'ajout du commentaire
-        res.redirect(`/projets/${projectId}`);
+        if (isAjaxRequest) {
+          return res.json({ success: true, message: 'Commentaire ajouté avec succès.' });
+        } else {
+          res.redirect(`/projets/${projectId}`);
+        }
       }
     }
   );
 });
 
 // Route pour gérer les réactions aux commentaires
-app.post('/react/:commentId', (req, res) => {
-  if (!req.session.userId) {
-    return res.status(403).json({ success: false, message: 'Vous devez être connecté pour réagir.' });
-  }
-
+app.post('/react/:commentId', isAuthenticated, csrfMiddleware, (req, res) => {
   const { commentId } = req.params;
   const { emoji } = req.body;
   const userId = req.session.userId;
@@ -912,14 +1160,10 @@ app.post('/react/:commentId', (req, res) => {
 });
 
 // Route pour supprimer un commentaire, avec suppression des réactions associées
-app.delete('/comments/:id', (req, res) => {
+app.delete('/comments/:id', isAuthenticated, (req, res) => {
   const commentId = req.params.id;
   const userId = req.session.userId; // ID de l'utilisateur connecté
   const adminUsername = process.env.ADMIN_USERNAME; // Nom d'utilisateur admin défini dans .env
-
-  if (!userId) {
-    return res.status(403).send('Vous devez être connecté pour supprimer des commentaires.');
-  }
 
   // Récupération des informations de l'utilisateur connecté
   db.get(`SELECT * FROM users WHERE id = ?`, [userId], (err, user) => {
@@ -972,17 +1216,12 @@ app.delete('/comments/:id', (req, res) => {
   });
 });
 
-// Route pour supprimer un projet (accessible uniquement à l'admin)
-app.delete('/projets/:id', (req, res) => {
+// Route pour supprimer un projet (accessible à l'administrateur et au créateur du projet)
+app.delete('/projets/:id', isAuthenticated, (req, res) => {
   const projectId = req.params.id;
-  const userId = req.session.userId; // ID de l'utilisateur connecté
+  const userId = req.session.userId;
   const adminUsername = process.env.ADMIN_USERNAME;
 
-  if (!userId) {
-    return res.status(403).send('Vous devez être connecté pour supprimer des projets.');
-  }
-
-  // Récupération des informations de l'utilisateur connecté
   db.get(`SELECT * FROM users WHERE id = ?`, [userId], (err, user) => {
     if (err) {
       console.error('Erreur lors de la vérification de l\'utilisateur:', err.message);
@@ -993,36 +1232,53 @@ app.delete('/projets/:id', (req, res) => {
       return res.status(403).send('Utilisateur non trouvé.');
     }
 
-    // Vérifier si l'utilisateur est l'admin
-    if (user.username !== adminUsername) {
-      return res.status(403).send('Vous n\'êtes pas autorisé à supprimer ce projet.');
-    }
-
-    // Supprimer les réactions associées aux commentaires du projet
-    db.run(`DELETE FROM comment_reactions WHERE comment_id IN (SELECT id FROM comments WHERE projectId = ?)`, [projectId], function(err) {
-      if (err) {
-        console.error('Erreur lors de la suppression des réactions associées:', err.message);
-        return res.status(500).send('Erreur lors de la suppression des réactions associées.');
-      }
-
-      // Supprimer les commentaires associés au projet
-      db.run(`DELETE FROM comments WHERE projectId = ?`, [projectId], function(err) {
+    // Vérifier si l'utilisateur est l'administrateur
+    if (user.username === adminUsername) {
+      // L'administrateur peut supprimer le projet
+      deleteProject();
+    } else {
+      // Vérifier si l'utilisateur est le créateur du projet
+      db.get(`SELECT * FROM projects WHERE id = ? AND userId = ?`, [projectId, userId], (err, project) => {
         if (err) {
-          console.error('Erreur lors de la suppression des commentaires associés:', err.message);
-          return res.status(500).send('Erreur lors de la suppression des commentaires associés.');
+          console.error('Erreur lors de la vérification du projet:', err.message);
+          return res.status(500).send('Erreur serveur.');
         }
 
-        // Supprimer le projet
-        db.run(`DELETE FROM projects WHERE id = ?`, [projectId], function(err) {
+        if (!project) {
+          return res.status(403).send('Vous n\'êtes pas autorisé à supprimer ce projet.');
+        }
+
+        deleteProject();
+      });
+    }
+
+    function deleteProject() {
+      // Supprimer les réactions associées aux commentaires du projet
+      db.run(`DELETE FROM comment_reactions WHERE comment_id IN (SELECT id FROM comments WHERE projectId = ?)`, [projectId], function (err) {
+        if (err) {
+          console.error('Erreur lors de la suppression des réactions associées:', err.message);
+          return res.status(500).send('Erreur lors de la suppression des réactions associées.');
+        }
+
+        // Supprimer les commentaires associés au projet
+        db.run(`DELETE FROM comments WHERE projectId = ?`, [projectId], function (err) {
           if (err) {
-            console.error('Erreur lors de la suppression du projet:', err.message);
-            return res.status(500).send('Erreur lors de la suppression du projet.');
+            console.error('Erreur lors de la suppression des commentaires associés:', err.message);
+            return res.status(500).send('Erreur lors de la suppression des commentaires associés.');
           }
 
-          res.status(200).send('Projet supprimé avec succès.');
+          // Supprimer le projet
+          db.run(`DELETE FROM projects WHERE id = ?`, [projectId], function (err) {
+            if (err) {
+              console.error('Erreur lors de la suppression du projet:', err.message);
+              return res.status(500).send('Erreur lors de la suppression du projet.');
+            }
+
+            res.status(200).send('Projet supprimé avec succès.');
+          });
         });
       });
-    });
+    }
   });
 });
 

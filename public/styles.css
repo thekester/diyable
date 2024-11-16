@@ -633,6 +633,29 @@ form .form-footer a:hover {
   margin-right: 5px;
 }
 
+.edit-button {
+  background-color: #28a745; /* Couleur verte */
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  cursor: pointer;
+  font-size: 16px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 5px;
+  text-decoration: none; /* Pour les liens */
+  margin-right: 10px;
+}
+
+.edit-button:hover {
+  background-color: #218838;
+}
+
+.edit-button i.fa-edit {
+  margin-right: 5px;
+}
+
+
 
 .comment {
   position: relative; /* Nécessaire pour que le bouton soit positionné absolument par rapport au commentaire */

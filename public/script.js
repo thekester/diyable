@@ -1,7 +1,9 @@
 // script.js
 
-// DOMContentLoaded pour s'assurer que le script s'exécute après le chargement de la page
 document.addEventListener('DOMContentLoaded', function () {
+  // Récupérer le jeton CSRF depuis la balise meta
+  const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
   // Sélection des boutons de filtre
   const filterButtons = document.querySelectorAll('.filter-button');
   const projectCards = document.querySelectorAll('.project-card');
@@ -93,7 +95,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
     fetch(`/react/${commentId}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'CSRF-Token': csrfToken,
+      },
       body: JSON.stringify({ emoji }),
     })
       .then((response) => response.json())
@@ -146,6 +152,8 @@ document.addEventListener('DOMContentLoaded', function () {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'CSRF-Token': csrfToken,
         },
       })
         .then((response) => {
@@ -180,6 +188,8 @@ document.addEventListener('DOMContentLoaded', function () {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'CSRF-Token': csrfToken,
         },
       })
         .then((response) => {
@@ -254,11 +264,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (countdownSeconds && countdownSeconds > 0) {
       let remainingSeconds = countdownSeconds;
-      notification.textContent = `${message} Vous allez être déconnecté dans ${remainingSeconds} seconde(s).`;
+      const originalMessage = message;
+      notification.textContent = `${message} Vous serez redirigé dans ${remainingSeconds} seconde(s).`;
       const intervalId = setInterval(() => {
         remainingSeconds--;
         if (remainingSeconds > 0) {
-          notification.textContent = `${message} Vous allez être déconnecté dans ${remainingSeconds} seconde(s).`;
+          notification.textContent = `${originalMessage} Vous serez redirigé dans ${remainingSeconds} seconde(s).`;
         } else {
           clearInterval(intervalId);
           notification.style.display = 'none';
@@ -293,21 +304,46 @@ document.addEventListener('DOMContentLoaded', function () {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'CSRF-Token': csrfToken,
         },
         body: JSON.stringify(data),
       })
-        .then((response) => response.json())
+        .then((response) => {
+          if (!response.ok) {
+            return response.json().then((data) => {
+              throw data;
+            });
+          }
+          return response.json();
+        })
         .then((data) => {
           if (data.success) {
-            showNotification('success', 'Connexion réussie !', () => {
-              window.location.href = '/';
-            });
+            const countdownSeconds = 3; // Durée du compte à rebours en secondes
+            showNotification(
+              'success',
+              'Connexion réussie !',
+              () => {
+                window.location.href = '/';
+              },
+              countdownSeconds
+            );
           } else {
-            showNotification('error', data.message); // Affiche l'erreur
+            if (data.errors) {
+              const errorMessages = data.errors.map((err) => err.msg).join('<br>');
+              showNotification('error', errorMessages);
+            } else {
+              showNotification('error', data.message || 'Une erreur est survenue.');
+            }
           }
         })
         .catch((error) => {
-          showNotification('error', 'Une erreur est survenue.');
+          if (error && error.errors) {
+            const errorMessages = error.errors.map((err) => err.msg).join('<br>');
+            showNotification('error', errorMessages);
+          } else {
+            showNotification('error', error.message || 'Une erreur est survenue.');
+          }
           console.error('Erreur réseau:', error);
         });
     });
@@ -328,21 +364,46 @@ document.addEventListener('DOMContentLoaded', function () {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'CSRF-Token': csrfToken,
         },
         body: JSON.stringify(data),
       })
-        .then((response) => response.json())
+        .then((response) => {
+          if (!response.ok) {
+            return response.json().then((data) => {
+              throw data;
+            });
+          }
+          return response.json();
+        })
         .then((data) => {
           if (data.success) {
-            showNotification('success', data.message, () => {
-              window.location.href = '/login';
-            });
+            const countdownSeconds = 3; // Durée du compte à rebours en secondes
+            showNotification(
+              'success',
+              data.message,
+              () => {
+                window.location.href = '/login';
+              },
+              countdownSeconds
+            );
           } else {
-            showNotification('error', data.message); // Affiche l'erreur
+            if (data.errors) {
+              const errorMessages = data.errors.map((err) => err.msg).join('<br>');
+              showNotification('error', errorMessages);
+            } else {
+              showNotification('error', data.message || 'Une erreur est survenue.');
+            }
           }
         })
         .catch((error) => {
-          showNotification('error', 'Une erreur est survenue.');
+          if (error && error.errors) {
+            const errorMessages = error.errors.map((err) => err.msg).join('<br>');
+            showNotification('error', errorMessages);
+          } else {
+            showNotification('error', error.message || 'Une erreur est survenue.');
+          }
           console.error('Erreur réseau:', error);
         });
     });
@@ -362,10 +423,19 @@ document.addEventListener('DOMContentLoaded', function () {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'CSRF-Token': csrfToken,
         },
         body: JSON.stringify(data),
       })
-        .then((response) => response.json())
+        .then((response) => {
+          if (!response.ok) {
+            return response.json().then((data) => {
+              throw data;
+            });
+          }
+          return response.json();
+        })
         .then((data) => {
           if (data.success) {
             const countdownSeconds = 3; // Durée du compte à rebours en secondes
@@ -380,11 +450,21 @@ document.addEventListener('DOMContentLoaded', function () {
               countdownSeconds
             );
           } else {
-            showNotification('error', data.message); // Affiche l'erreur
+            if (data.errors) {
+              const errorMessages = data.errors.map((err) => err.msg).join('<br>');
+              showNotification('error', errorMessages);
+            } else {
+              showNotification('error', data.message || 'Une erreur est survenue.');
+            }
           }
         })
         .catch((error) => {
-          showNotification('error', 'Une erreur est survenue.');
+          if (error && error.errors) {
+            const errorMessages = error.errors.map((err) => err.msg).join('<br>');
+            showNotification('error', errorMessages);
+          } else {
+            showNotification('error', error.message || 'Une erreur est survenue.');
+          }
           console.error('Erreur réseau:', error);
         });
     });

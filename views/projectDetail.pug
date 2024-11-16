@@ -9,6 +9,16 @@ block content
     p Catégorie: #{project.category}
     a(href="/projets") Retour aux projets
 
+    // Afficher le bouton "Modifier" si l'utilisateur est l'auteur du projet ou l'administrateur
+    if currentUserId === project.userId || username === adminUsername
+      a.edit-button(
+        href=`/projets/${project.id}/edit`
+        title="Modifier ce projet"
+      )
+        i.fa.fa-edit(style="margin-right: 5px;")
+        | Modifier le projet
+
+    // Bouton de suppression (pour l'administrateur uniquement)
     if username === adminUsername
       button.delete-button2(
         type="button"
@@ -23,6 +33,8 @@ block content
     if username
       form#commentForm(method="POST" action="/comments")
         input(type="hidden" name="projectId" value=projectId)
+        //- Ajouter le jeton CSRF
+        input(type="hidden" name="_csrf" value=csrfToken)
         textarea(name="comment" placeholder="Écrivez votre commentaire ici..." required)
         button(type="submit") Publier
     else
