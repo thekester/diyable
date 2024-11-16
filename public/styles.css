@@ -13,6 +13,10 @@
   --footer-text-color: #333;
   --link-color: #555;
   --link-hover-color: var(--secondary-color);
+  --comment-box-background: #eef2f7;
+  --comment-date-color: #888;
+  --delete-button-color: red;
+  --delete-button-hover-color: darkred;
 }
 
 body.dark-mode {
@@ -29,23 +33,31 @@ body.dark-mode {
   --footer-text-color: #e0e0e0;
   --link-color: #bbb;
   --link-hover-color: var(--secondary-color);
+  --comment-box-background: #1e1e1e;
+  --comment-date-color: #aaa;
+  --delete-button-color: #ff6666;
+  --delete-button-hover-color: #ff4c4c;
 }
 
 /* Importation des polices locales */
 @font-face {
   font-family: "Grotesque";
-  src: url("/fonts/BrandonGrotesque-Regular.eot"),
-       url("/fonts/BrandonGrotesque-Regular.ttf"),
-       url("/fonts/BrandonGrotesque-Regular.woff");
+  src: 
+       url("/fonts/BrandonGrotesque-Regular.woff") format("woff"),
+       url("/fonts/BrandonGrotesque-Regular.ttf") format("truetype");
   font-weight: normal;
+  font-style: normal;
 }
+
 @font-face {
   font-family: "Grotesque Black";
-  src: url("/fonts/BrandonGrotesque-Black.eot"),
-       url("/fonts/BrandonGrotesque-Black.ttf"),
-       url("/fonts/BrandonGrotesque-Black.woff");
+  src: 
+       url("/fonts/BrandonGrotesque-Black.woff") format("woff"),
+       url("/fonts/BrandonGrotesque-Black.ttf") format("truetype");
   font-weight: bold;
+  font-style: normal;
 }
+
 * {
   box-sizing: border-box;
 }
@@ -660,12 +672,14 @@ form .form-footer a:hover {
   flex-direction: column;
   align-items: center;
   transition: background 0.3s;
+  visibility: hidden;
 }
 
-.dropdown-menu.show {
+#dropdownMenu.show {
   display: flex !important;
   opacity: 1;
   transform: translateY(0);
+  visibility: visible;
 }
 
 #dropdownMenu li {
@@ -716,7 +730,7 @@ form .form-footer a:hover {
   padding: 15px;
   margin-bottom: 15px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  transition: background 0.3s;
+  transition: background 0.3s, color 0.3s;
   animation: fadeInComment 1s;
 }
 
@@ -753,15 +767,17 @@ form .form-footer a:hover {
 .comment button {
   align-self: flex-start;
   padding: 10px 20px;
-  background-color: var(--background-color);
+  background-color: var(--primary-color);
+  color: var(--button-text-color);
   border: none;
+  border-radius: 5px;
   cursor: pointer;
-  transition: background-color 0.3s;
-  color: var(--text-color);
+  transition: background-color 0.3s, transform 0.2s;
 }
 
 .comment button:hover {
-  background-color: #eef2f7;
+  background-color: var(--primary-color-hover);
+  transform: translateY(-2px);
 }
 
 .comment-header {
@@ -777,7 +793,7 @@ form .form-footer a:hover {
 
 .comment-date {
   font-size: 0.9em;
-  color: #888;
+  color: var(--comment-date-color);
 }
 
 .comment-body {
@@ -786,29 +802,31 @@ form .form-footer a:hover {
 }
 
 .comment-box {
-  background-color: #eef2f7;
+  background-color: var(--comment-box-background);
   padding: 10px;
   border-radius: 8px;
   margin-top: 10px;
+  color: var(--text-color);
 }
 
 .delete-button {
   background: none;
   border: none;
-  color: red;
+  color: var(--delete-button-color);
   cursor: pointer;
   position: absolute;
   bottom: 5px;
   right: 5px;
   font-size: 1.1em;
+  transition: color 0.3s;
 }
 
 .delete-button:hover {
-  opacity: 0.8;
+  color: var(--delete-button-hover-color);
 }
 
 .delete-button2 {
-  background-color: red;
+  background-color: var(--delete-button-color);
   color: var(--button-text-color);
   border: none;
   padding: 10px 15px;
@@ -818,10 +836,11 @@ form .form-footer a:hover {
   align-items: center;
   border-radius: 5px;
   margin-top: 3%;
+  transition: background-color 0.3s;
 }
 
 .delete-button2:hover {
-  background-color: darkred;
+  background-color: var(--delete-button-hover-color);
 }
 
 .delete-button2 i.fa-trash {
@@ -841,6 +860,7 @@ form .form-footer a:hover {
   border-radius: 5px;
   text-decoration: none;
   margin-right: 10px;
+  transition: background-color 0.3s;
 }
 
 .edit-button:hover {
@@ -853,6 +873,48 @@ form .form-footer a:hover {
 
 .comment {
   position: relative;
+}
+
+/* Styles pour les boutons de réaction */
+.reactions {
+  margin-top: 10px;
+}
+
+.reaction-button {
+  background-color: transparent;
+  border: none;
+  color: var(--text-color);
+  cursor: pointer;
+  font-size: 1em;
+  display: inline-flex;
+  align-items: center;
+  transition: color 0.3s, background-color 0.3s;
+  padding: 5px 10px;
+  border-radius: 5px;
+}
+
+.reaction-button .reaction-count {
+  margin-left: 5px;
+  font-size: 0.9em;
+  color: var(--text-color);
+}
+
+.reaction-button:hover {
+  background-color: var(--primary-color);
+  color: var(--button-text-color);
+}
+
+.reaction-button:hover .reaction-count {
+  color: var(--button-text-color);
+}
+
+.reaction-button.reacted {
+  background-color: var(--secondary-color);
+  color: var(--button-text-color);
+}
+
+.reaction-button.reacted .reaction-count {
+  color: var(--button-text-color);
 }
 
 /* Styles pour la page de détail du projet */

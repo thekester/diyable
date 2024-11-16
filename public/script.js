@@ -399,7 +399,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Fonction pour basculer l'affichage du menu déroulant
   function toggleDropdown(event) {
-    event.stopPropagation(); // Empêche la propagation de l'événement pour éviter de fermer le menu immédiatement
+    event.stopPropagation(); // Empêche la fermeture immédiate du menu
     const dropdownMenu = document.getElementById('dropdownMenu');
     if (dropdownMenu) {
       dropdownMenu.classList.toggle('show'); // Bascule l'affichage du menu
@@ -409,7 +409,13 @@ document.addEventListener('DOMContentLoaded', function () {
   // Fonctionnalité du menu déroulant pour le nom d'utilisateur
   const usernameDropdown = document.getElementById('usernameDropdown');
   if (usernameDropdown) {
-    usernameDropdown.addEventListener('click', toggleDropdown);
+    if (!usernameDropdown.classList.contains('listener-attached')) {
+      usernameDropdown.addEventListener('click', toggleDropdown);
+      usernameDropdown.classList.add('listener-attached');
+      console.log('Écouteur d\'événement ajouté à usernameDropdown');
+    } else {
+      console.log('Écouteur déjà attaché à usernameDropdown');
+    }
   } else {
     console.warn('Élément usernameDropdown non trouvé');
   }
