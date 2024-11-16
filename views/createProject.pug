@@ -4,6 +4,8 @@ block content
   h1#titleCreate Ajouter un Projet
 
   form(action='/projets/ajouter' method='POST' enctype='multipart/form-data')
+    // **Ajout du jeton CSRF**
+    input(type='hidden' name='_csrf' value=csrfToken)
     div
       label(for='name') Nom du projet:
       input(type='text' name='name' required)
