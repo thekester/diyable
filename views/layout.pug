@@ -7,7 +7,7 @@ html(lang="fr")
     meta(name="csrf-token" content=csrfToken)
     meta(name="viewport" content="width=device-width, initial-scale=1.0")
     title #{title} - DIY able
-    link(rel="stylesheet" href="/styles.css")
+    link(rel="stylesheet", href="/styles.css")
     //- Favicons
     link(rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png")
     link(rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png")
@@ -15,19 +15,26 @@ html(lang="fr")
     link(rel="mask-icon" href="/images/safari-pinned-tab.svg" color="#5bbad5")
     link(rel="shortcut icon" href="/images/favicon.ico")
     //- Inclusion des polices Google Fonts
-    link(rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:400,700&display=swap")
-    link(rel="stylesheet" href="https://fonts.googleapis.com/css?family=Montserrat:400,700&display=swap")
+    link(rel="stylesheet", href="https://fonts.googleapis.com/css?family=Roboto:400,700&display=swap")
+    link(rel="stylesheet", href="https://fonts.googleapis.com/css?family=Montserrat:400,700&display=swap")
     //- Inclusion de FontAwesome pour les icônes
-    link(rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"  crossorigin="anonymous" referrerpolicy="no-referrer")
-    link(rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.4/toastr.min.css")
+    link(rel="stylesheet", href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css", crossorigin="anonymous", referrerpolicy="no-referrer")
+    link(rel="stylesheet", href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.4/toastr.min.css")
     script(src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.4/toastr.min.js")
 
   body
     header
       .logo
-        img(src="/images/logo-diyable.jpeg" alt="DIY able logo")
+        img(src="/images/logo-diyable.jpeg", alt="DIY able logo")
       nav
         ul
+          //- Dark mode toggle switch placed before the "Accueil" menu item
+          li
+            label.dark-mode-switch
+              input#dark-mode-toggle(type="checkbox", onchange="toggleDarkMode()", aria-label="Basculer le mode sombre")
+              span.slider
+                i.fa.fa-sun.sun-icon
+                i.fa.fa-moon.moon-icon
           li: a.nav-link(href="/") Accueil
           li: a.nav-link(href="/projets") Projets
           li: a.nav-link(href="/about") À Propos
@@ -35,24 +42,23 @@ html(lang="fr")
           //- Logique pour afficher le nom d'utilisateur ou le lien de connexion
           if username
             li
-              a(href="javascript:void(0)" id="usernameDropdown") #{username}
+              a(href="javascript:void(0)", id="usernameDropdown") #{username}
               ul#dropdownMenu.dropdown-menu
                 li: a(href="/profile") Mon Profil
                 li: a(href="/logout") Déconnexion
-
           else
             li
               a(href="/login")
-                button(type="button" id="connexion") Connexion
+                button(type="button", id="connexion") Connexion
 
     main
       block content
 
-    footer.footer(role="contentinfo" itemscope itemtype="http://schema.org/Organization")
+    footer.footer(role="contentinfo", itemscope, itemtype="http://schema.org/Organization")
       .footer-container
         //- Section Logo et Description
         .footer-section
-          img(src="/images/logo-diyable.jpeg" alt="DIY able logo" class="footer-logo-img")
+          img(src="/images/logo-diyable.jpeg", alt="DIY able logo", class="footer-logo-img")
           p.footer-description DIY able - Votre source pour des projets DIY innovants.
 
         //- Section Shop DIY able
@@ -87,19 +93,19 @@ html(lang="fr")
         .footer-section
           h4 Suivez-nous
           .footer-socials
-            a.u-url(rel="me", href="https://linkedin.com/in/votre-profil", aria-label="LinkedIn", itemprop="sameAs")
+            a.u-url(rel="me", href="https://linkedin.com/in/votre-profil", "aria-label"="LinkedIn", itemprop="sameAs")
               i.fa-brands.fa-linkedin
-            a.u-url(rel="me", href="https://github.com/votre-profil", aria-label="GitHub", itemprop="sameAs")
+            a.u-url(rel="me", href="https://github.com/votre-profil", "aria-label"="GitHub", itemprop="sameAs")
               i.fa-brands.fa-github
-            a.u-url(rel="me", href="https://twitter.com/votre-profil", aria-label="Twitter", itemprop="sameAs")
+            a.u-url(rel="me", href="https://twitter.com/votre-profil", "aria-label"="Twitter", itemprop="sameAs")
               i.fa-brands.fa-twitter
-            a.u-url(rel="me", href="https://mastodon.social/@votre-profil", aria-label="Mastodon", itemprop="sameAs")
+            a.u-url(rel="me", href="https://mastodon.social/@votre-profil", "aria-label"="Mastodon", itemprop="sameAs")
               i.fa-brands.fa-mastodon
-            a.u-url(rel="me", href="https://threads.net/@votre-profil", aria-label="Threads", itemprop="sameAs")
+            a.u-url(rel="me", href="https://threads.net/@votre-profil", "aria-label"="Threads", itemprop="sameAs")
               i.fa-brands.fa-threads
-            a.u-url(rel="me", href="https://facebook.com/votre-profil", aria-label="Facebook", itemprop="sameAs")
+            a.u-url(rel="me", href="https://facebook.com/votre-profil", "aria-label"="Facebook", itemprop="sameAs")
               i.fa-brands.fa-facebook
-            a.u-url(rel="me", href="https://instagram.com/votre-profil", aria-label="Instagram", itemprop="sameAs")
+            a.u-url(rel="me", href="https://instagram.com/votre-profil", "aria-label"="Instagram", itemprop="sameAs")
               i.fa-brands.fa-instagram
 
       //- Bas de page avec liens légaux
@@ -117,4 +123,5 @@ html(lang="fr")
           a(href="/legal-info") Mentions légales
 
     //- Inclusion des scripts
+    script(src="/script.js")
     block scripts

@@ -1,8 +1,51 @@
 // script.js
 
 document.addEventListener('DOMContentLoaded', function () {
-  // Récupérer le jeton CSRF depuis la balise meta
-  const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+  // Récupérer le jeton CSRF depuis une variable globale définie dans le layout Pug
+  const csrfToken = window.csrfToken || '';
+
+  // **Dark Mode Implementation**
+
+  // Sélectionner la case à cocher du mode sombre
+  const darkModeToggle = document.getElementById('dark-mode-toggle');
+
+  function applyDarkMode(isDark) {
+    if (isDark) {
+      document.body.classList.add('dark-mode');
+      if (darkModeToggle) darkModeToggle.checked = true;
+    } else {
+      document.body.classList.remove('dark-mode');
+      if (darkModeToggle) darkModeToggle.checked = false;
+    }
+  }
+
+  // Vérifier si l'utilisateur a une préférence enregistrée
+  const userPrefersDark = localStorage.getItem('dark-mode');
+  const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+  // Définir le mode initial basé sur la préférence de l'utilisateur ou du système
+  if (userPrefersDark !== null) {
+    applyDarkMode(userPrefersDark === 'true');
+  } else {
+    applyDarkMode(systemPrefersDark);
+  }
+
+  // Ajouter un écouteur d'événement à la case à cocher
+  window.toggleDarkMode = function () {
+    const isDarkMode = darkModeToggle.checked;
+    localStorage.setItem('dark-mode', isDarkMode);
+    applyDarkMode(isDarkMode);
+  };
+
+  // Optionnel : Écouter les changements du mode sombre du système
+  const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+  darkModeMediaQuery.addEventListener('change', (e) => {
+    if (localStorage.getItem('dark-mode') === null) {
+      applyDarkMode(e.matches);
+    }
+  });
+
+  // **Code existant**
 
   // Sélection des boutons de filtre
   const filterButtons = document.querySelectorAll('.filter-button');
@@ -82,8 +125,100 @@ document.addEventListener('DOMContentLoaded', function () {
   const commentForm = document.getElementById('commentForm');
   if (commentForm) {
     commentForm.addEventListener('submit', function (event) {
-      // Pas de prévention de l'action par défaut ici, car le formulaire sera soumis et la page rechargée
+      event.preventDefault(); // Empêche le rechargement de la page
+
+      const formData = new FormData(commentForm);
+      const data = {
+        comment: formData.get('comment'),
+        projectId: formData.get('projectId'),
+      };
+      const csrfToken = formData.get('_csrf'); // Récupérer le jeton CSRF à partir du formulaire
+
+      fetch('/comments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': csrfToken, // Utiliser le jeton CSRF récupéré
+        },
+        body: JSON.stringify(data),
+      })
+        .then((response) => {
+          if (!response.ok) {
+            return response.json().then((data) => {
+              throw data;
+            });
+          }
+          return response.json();
+        })
+        .then((data) => {
+          if (data.success) {
+            // Ajouter le nouveau commentaire au DOM sans recharger la page
+            addCommentToDOM(data.comment);
+            // Réinitialiser le formulaire
+            commentForm.reset();
+          } else {
+            console.error("Erreur lors de l'ajout du commentaire:", data.message);
+          }
+        })
+        .catch((error) => {
+          console.error('Erreur réseau:', error);
+        });
     });
+  }
+
+  // Fonction pour ajouter un commentaire au DOM
+  function addCommentToDOM(comment) {
+    const commentList = document.querySelector('.comment-list');
+    if (commentList) {
+      const commentElement = document.createElement('div');
+      commentElement.classList.add('comment');
+
+      commentElement.innerHTML = `
+        <div class="comment-header">
+          <strong class="comment-username">${comment.username}</strong>
+          <span class="comment-date">${new Date(comment.date).toLocaleDateString('fr-FR')}</span>
+        </div>
+        <div class="comment-body comment-box">
+          <p>${comment.comment}</p>
+          ${
+            comment.canDelete
+              ? `
+              <button type="button" class="delete-button" data-comment-id="${comment.id}" title="Supprimer ce commentaire">
+                <i class="fa fa-trash"></i>
+              </button>
+            `
+              : ''
+          }
+        </div>
+        <div class="reactions">
+          ${renderReactions(comment)}
+        </div>
+      `;
+
+      commentList.prepend(commentElement);
+      attachReactionEventListeners(); // Ré-attacher les événements
+      attachDeleteEventListeners();
+    }
+  }
+
+  // Fonction pour rendre les boutons de réaction
+  function renderReactions(comment) {
+    const reactions = ['👍', '💩', '❤️', '😂'];
+    let html = '';
+    reactions.forEach((emoji) => {
+      const count = comment.reactions && comment.reactions[emoji] ? comment.reactions[emoji] : 0;
+      html += `
+        <button
+          type="button"
+          class="reaction-button"
+          data-comment-id="${comment.id}"
+          data-emoji="${emoji}"
+        >
+          ${emoji} <span class="reaction-count">${count}</span>
+        </button>
+      `;
+    });
+    return html;
   }
 
   // Fonction pour gérer les réactions aux commentaires
@@ -97,8 +232,8 @@ document.addEventListener('DOMContentLoaded', function () {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'CSRF-Token': csrfToken,
+        Accept: 'application/json',
+        'X-CSRF-Token': csrfToken, // Modifié ici
       },
       body: JSON.stringify({ emoji }),
     })
@@ -128,6 +263,7 @@ document.addEventListener('DOMContentLoaded', function () {
   function attachReactionEventListeners() {
     const reactionButtons = document.querySelectorAll('.reaction-button');
     reactionButtons.forEach((button) => {
+      button.removeEventListener('click', reactToComment); // Éviter les doublons
       button.addEventListener('click', reactToComment);
     });
   }
@@ -152,8 +288,8 @@ document.addEventListener('DOMContentLoaded', function () {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'CSRF-Token': csrfToken,
+          Accept: 'application/json',
+          'X-CSRF-Token': csrfToken, // Modifié ici
         },
       })
         .then((response) => {
@@ -188,8 +324,8 @@ document.addEventListener('DOMContentLoaded', function () {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'CSRF-Token': csrfToken,
+          Accept: 'application/json',
+          'X-CSRF-Token': csrfToken, // Modifié ici
         },
       })
         .then((response) => {
@@ -214,6 +350,7 @@ document.addEventListener('DOMContentLoaded', function () {
   function attachDeleteEventListeners() {
     const deleteButtons = document.querySelectorAll('.delete-button, .delete-button2');
     deleteButtons.forEach((button) => {
+      button.removeEventListener('click', deleteItem); // Éviter les doublons
       button.addEventListener('click', deleteItem);
     });
   }
@@ -304,8 +441,8 @@ document.addEventListener('DOMContentLoaded', function () {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'CSRF-Token': csrfToken,
+          Accept: 'application/json',
+          'X-CSRF-Token': csrfToken, // Modifié ici
         },
         body: JSON.stringify(data),
       })
@@ -364,8 +501,8 @@ document.addEventListener('DOMContentLoaded', function () {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'CSRF-Token': csrfToken,
+          Accept: 'application/json',
+          'X-CSRF-Token': csrfToken, // Modifié ici
         },
         body: JSON.stringify(data),
       })
@@ -423,8 +560,8 @@ document.addEventListener('DOMContentLoaded', function () {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'CSRF-Token': csrfToken,
+          Accept: 'application/json',
+          'X-CSRF-Token': csrfToken, // Modifié ici
         },
         body: JSON.stringify(data),
       })
