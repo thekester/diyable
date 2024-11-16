@@ -9,11 +9,32 @@ block content
     p Catégorie: #{project.category}
     a(href="/projets") Retour aux projets
 
+    // Afficher le bouton "Modifier" si l'utilisateur est l'auteur du projet ou l'administrateur
+    if currentUserId === project.userId || username === adminUsername
+      a.edit-button(
+        href=`/projets/${project.id}/edit`
+        title="Modifier ce projet"
+      )
+        i.fa.fa-edit(style="margin-right: 5px;")
+        | Modifier le projet
+
+    // Bouton de suppression (pour l'administrateur uniquement)
+    if username === adminUsername
+      button.delete-button2(
+        type="button"
+        data-project-id=project.id
+        title="Supprimer ce projet"
+      )
+        i.fa.fa-trash(style="color: white; margin-right: 5px;")
+        | Supprimer ce projet
+
   section.comment
     h2 Commentaires
     if username
       form#commentForm(method="POST" action="/comments")
         input(type="hidden" name="projectId" value=projectId)
+        //- Ajouter le jeton CSRF
+        input(type="hidden" name="_csrf" value=csrfToken)
         textarea(name="comment" placeholder="Écrivez votre commentaire ici..." required)
         button(type="submit") Publier
     else
@@ -27,7 +48,7 @@ block content
               span.comment-date #{new Date(comment.date).toLocaleDateString('fr-FR')}
             .comment-body.comment-box
               p= comment.comment
-              if comment.userId === currentUserId || username === process.env.ADMIN_USERNAME
+              if comment.userId === currentUserId || username === adminUsername
                 button.delete-button(
                   type="button"
                   data-comment-id=comment.id
@@ -43,7 +64,7 @@ block content
                   class="reaction-button"
                   data-comment-id=comment.id
                   data-emoji=emoji
-                ) #{emoji} 
+                ) #{emoji}
                   span.reaction-count #{count}
       else
         p Aucun commentaire pour le moment.

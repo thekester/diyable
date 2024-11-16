@@ -1,0 +1,39 @@
+extends layout
+
+block content
+  section.edit-project
+    h1 Modifier le projet
+
+    if errors && errors.length > 0
+      ul.error-messages
+        each error in errors
+          li= error.msg
+
+    form#editProjectForm(method="POST" action=`/projets/${project.id}/edit` enctype="multipart/form-data")
+      //- Ajouter le jeton CSRF
+      input(type="hidden" name="_csrf" value=csrfToken)
+
+      label(for="name") Nom du projet:
+      input#name(type="text" name="name" value=project.name required)
+
+      label(for="description") Description:
+      textarea#description(name="description" required)= project.description
+
+      label(for="category") Catégorie:
+      input#category(type="text" name="category" value=project.category required)
+
+      label(for="image") Image actuelle:
+      if project.image
+        img(src=`/${project.image}` alt=`${project.name}` width="200")
+      else
+        p Aucune image
+
+      label(for="newImage") Changer l'image (optionnel):
+      input#newImage(type="file" name="image" accept="image/*")
+
+      button(type="submit") Enregistrer les modifications
+
+    a(href=`/projets/${project.id}`) Annuler
+
+block scripts
+  script(src="/script.js")
