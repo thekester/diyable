@@ -1,3 +1,5 @@
+// app.js
+
 require('dotenv').config(); // Charger les variables d'environnement depuis .env
 
 const express = require('express');
@@ -33,18 +35,57 @@ app.use('/images', express.static(path.join(__dirname, 'assets', 'images'))); //
 app.set('view engine', 'pug');
 app.set('views', './views');
 
-// Middleware pour ajouter le nom d'utilisateur aux variables locales
+app.use('/fonts', express.static(path.join(__dirname, 'public', 'fonts'))); // Servir les polices
+
+// Middleware pour ajouter le nom d'utilisateur et le jeton CSRF aux variables locales
 app.use((req, res, next) => {
   res.locals.username = req.session.username;
   next();
 });
 
-// Middleware pour gérer les messages d'erreur CSRF
+// Initialiser le middleware CSRF
+const csrfProtection = csrf({
+  cookie: false, // Si vous n'utilisez pas de cookie pour le jeton CSRF
+  value: (req) => {
+    return req.headers['x-csrf-token'] || req.body._csrf || req.query._csrf;
+  },
+});
+
+
+// Fonction pour appliquer le middleware CSRF et ajouter le jeton CSRF aux variables locales
+function csrfMiddleware(req, res, next) {
+  csrfProtection(req, res, function (err) {
+    if (err) {
+      return next(err);
+    }
+    res.locals.csrfToken = req.csrfToken();
+    next();
+  });
+}
+
+// Middleware pour gérer les erreurs de jeton CSRF
 app.use(function (err, req, res, next) {
   if (err.code !== 'EBADCSRFTOKEN') return next(err);
+
   console.error('Jeton CSRF invalide:', err);
-  res.status(403).send('Formulaire invalide : Jeton CSRF invalide.');
+
+  const errorMessage =
+    'Votre session a expiré ou est invalide. Veuillez recharger la page et réessayer.';
+
+  // Vérifier si la requête est vers une route API
+  if (req.path.startsWith('/comments') || req.path.startsWith('/react') || req.path.startsWith('/projets')) {
+    res.status(403).json({
+      success: false,
+      message: errorMessage,
+    });
+  } else {
+    res.status(403).render('csrfError', {
+      title: 'Erreur de sécurité',
+      message: errorMessage,
+    });
+  }
 });
+
 
 // Configuration de multer pour les téléchargements de fichiers
 const storage = multer.diskStorage({
@@ -84,20 +125,6 @@ if (!fs.existsSync(uploadsDir)) {
 
 // Servir le dossier uploads
 app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
-
-// Initialiser le middleware CSRF
-const csrfProtection = csrf();
-
-// Fonction pour appliquer le middleware CSRF et ajouter le jeton CSRF aux variables locales
-function csrfMiddleware(req, res, next) {
-  csrfProtection(req, res, function (err) {
-    if (err) {
-      return next(err);
-    }
-    res.locals.csrfToken = req.csrfToken();
-    next();
-  });
-}
 
 // Connexion à la base de données SQLite
 const dbPath = path.join(__dirname, 'bdd', 'diyable.db');
@@ -356,7 +383,16 @@ const insertInitialProjectsData = (adminUserId) => {
     console.log(`Doublons supprimés. ${this.changes} enregistrements affectés.`);
 
     const projects = [
-      // ... [Votre liste de projets ici] ...
+      // Ajoutez vos projets initiaux ici
+      // Par exemple :
+      // {
+      //   date: new Date().toISOString(),
+      //   name: 'Mon Premier Projet',
+      //   description: 'Description du projet',
+      //   category: 'Technologie',
+      //   image: 'uploads/mon_image.jpg',
+      //   userId: adminUserId,
+      // },
     ];
 
     const insertQuery = `
@@ -371,16 +407,19 @@ const insertInitialProjectsData = (adminUserId) => {
     db.serialize(() => {
       const stmt = db.prepare(insertQuery);
 
-      projects.forEach(project => {
-        stmt.run([project.date, project.name, project.description, project.category, project.image, adminUserId], function(err) {
-          if (err) {
-            console.error("Erreur lors de l'insertion ou la mise à jour du projet:", err.message);
+      projects.forEach((project) => {
+        stmt.run(
+          [project.date, project.name, project.description, project.category, project.image, adminUserId],
+          function (err) {
+            if (err) {
+              console.error("Erreur lors de l'insertion ou la mise à jour du projet:", err.message);
+            }
           }
-        });
+        );
       });
 
       stmt.finalize(() => {
-        console.log("Insertion ou mise à jour des projets terminée.");
+        console.log('Insertion ou mise à jour des projets terminée.');
       });
     });
   });
@@ -450,7 +489,12 @@ function isAuthenticated(req, res, next) {
 
 // Middleware pour valider les entrées utilisateur
 const validateProject = [
-  body('name').trim().notEmpty().withMessage('Le nom du projet est requis.').isLength({ max: 255 }).withMessage('Le nom du projet est trop long.'),
+  body('name')
+    .trim()
+    .notEmpty()
+    .withMessage('Le nom du projet est requis.')
+    .isLength({ max: 255 })
+    .withMessage('Le nom du projet est trop long.'),
   body('description').trim().notEmpty().withMessage('La description est requise.'),
   body('category').trim().notEmpty().withMessage('La catégorie est requise.'),
 ];
@@ -458,7 +502,7 @@ const validateProject = [
 // Routes
 
 // Route principale
-app.get('/', (req, res) => {
+app.get('/', csrfMiddleware, (req, res) => {
   // Récupérer les deux projets les plus récents
   const recentProjectsQuery = `
     SELECT projects.*, users.username
@@ -479,32 +523,32 @@ app.get('/', (req, res) => {
 });
 
 // Route Contact
-app.get('/contact', (req, res) => {
+app.get('/contact', csrfMiddleware, (req, res) => {
   res.render('contact', { title: 'Contact' });
 });
 
 // Route À Propos
-app.get('/about', (req, res) => {
+app.get('/about', csrfMiddleware, (req, res) => {
   res.render('about', { title: 'À Propos' });
 });
 
 // Route vers les conditions d'utilisation
-app.get('/terms-of-service', (req, res) => {
-  res.render('terms-of-service', { title: 'Conditions d\'utilisation' });
+app.get('/terms-of-service', csrfMiddleware, (req, res) => {
+  res.render('terms-of-service', { title: "Conditions d'utilisation" });
 });
 
 // Route pour la politique de confidentialité
-app.get('/privacy-policy', (req, res) => {
+app.get('/privacy-policy', csrfMiddleware, (req, res) => {
   res.render('privacy-policy', { title: 'Politique de Confidentialité' });
 });
 
 // Route pour les mentions légales
-app.get('/legal-info', (req, res) => {
+app.get('/legal-info', csrfMiddleware, (req, res) => {
   res.render('legal-info', { title: 'Mentions Légales' });
 });
 
 // Route pour les projets
-app.get('/projets', (req, res) => {
+app.get('/projets', csrfMiddleware, (req, res) => {
   const query = `
     SELECT projects.*, users.username
     FROM projects
@@ -548,38 +592,45 @@ app.get('/projets/ajouter', isAuthenticated, csrfMiddleware, (req, res) => {
 });
 
 // Route POST pour traiter la soumission du formulaire d'ajout de projet
-app.post('/projets/ajouter', isAuthenticated, upload.single('image'), csrfMiddleware, validateProject, (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    // Renvoyer le formulaire avec les messages d'erreur
-    return res.status(400).render('createProject', {
-      title: 'Ajouter un Projet',
-      errors: errors.array(),
+app.post(
+  '/projets/ajouter',
+  isAuthenticated,
+  upload.single('image'),
+  csrfMiddleware,
+  validateProject,
+  (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      // Renvoyer le formulaire avec les messages d'erreur
+      return res.status(400).render('createProject', {
+        title: 'Ajouter un Projet',
+        errors: errors.array(),
+      });
+    }
+
+    const { name, description, category } = req.body;
+    const userId = req.session.userId;
+    const date = new Date().toISOString();
+    const image = req.file ? `uploads/${req.file.filename}` : null;
+
+    const insertProjectQuery = `
+      INSERT INTO projects (date, name, description, category, image, userId)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `;
+
+    db.run(insertProjectQuery, [date, name, description, category, image, userId], function (err) {
+      if (err) {
+        console.error("Erreur lors de l'insertion du projet:", err.message);
+        return res.status(500).send("Erreur lors de l'ajout du projet.");
+      } else {
+        res.redirect(`/projets/${this.lastID}`);
+      }
     });
   }
-
-  const { name, description, category } = req.body;
-  const userId = req.session.userId;
-  const date = new Date().toISOString();
-  const image = req.file ? `uploads/${req.file.filename}` : null;
-
-  const insertProjectQuery = `
-    INSERT INTO projects (date, name, description, category, image, userId)
-    VALUES (?, ?, ?, ?, ?, ?)
-  `;
-
-  db.run(insertProjectQuery, [date, name, description, category, image, userId], function (err) {
-    if (err) {
-      console.error("Erreur lors de l'insertion du projet:", err.message);
-      return res.status(500).send("Erreur lors de l'ajout du projet.");
-    } else {
-      res.redirect(`/projets/${this.lastID}`);
-    }
-  });
-});
+);
 
 // Route pour le détail d'un projet
-app.get('/projets/:id', (req, res) => {
+app.get('/projets/:id', csrfMiddleware, (req, res) => {
   const projectId = req.params.id;
   const userId = req.session.userId;
   const adminUsername = process.env.ADMIN_USERNAME;
@@ -708,86 +759,93 @@ app.get('/projets/:id/edit', isAuthenticated, csrfMiddleware, (req, res) => {
 });
 
 // Route POST pour traiter la soumission du formulaire d'édition d'un projet
-app.post('/projets/:id/edit', isAuthenticated, upload.single('image'), csrfMiddleware, validateProject, (req, res) => {
-  const projectId = req.params.id;
-  const userId = req.session.userId;
-  const adminUsername = process.env.ADMIN_USERNAME;
+app.post(
+  '/projets/:id/edit',
+  isAuthenticated,
+  upload.single('image'),
+  csrfMiddleware,
+  validateProject,
+  (req, res) => {
+    const projectId = req.params.id;
+    const userId = req.session.userId;
+    const adminUsername = process.env.ADMIN_USERNAME;
 
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    // Récupérer le projet pour pré-remplir le formulaire
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      // Récupérer le projet pour pré-remplir le formulaire
+      const projectQuery = `
+        SELECT * FROM projects
+        WHERE id = ?
+      `;
+      db.get(projectQuery, [projectId], (err, project) => {
+        if (err) {
+          console.error('Erreur lors de la récupération du projet:', err.message);
+          return res.status(500).send('Erreur serveur');
+        }
+
+        return res.status(400).render('editProject', {
+          title: 'Modifier le projet',
+          project,
+          errors: errors.array(),
+        });
+      });
+      return;
+    }
+
+    const { name, description, category } = req.body;
+    let image = req.file ? `uploads/${req.file.filename}` : null;
+
     const projectQuery = `
       SELECT * FROM projects
       WHERE id = ?
     `;
+
     db.get(projectQuery, [projectId], (err, project) => {
       if (err) {
         console.error('Erreur lors de la récupération du projet:', err.message);
         return res.status(500).send('Erreur serveur');
       }
 
-      return res.status(400).render('editProject', {
-        title: 'Modifier le projet',
-        project,
-        errors: errors.array(),
+      if (!project) {
+        return res.status(404).send('Projet non trouvé');
+      }
+
+      if (userId !== project.userId && req.session.username !== adminUsername) {
+        return res.status(403).send("Vous n'êtes pas autorisé à modifier ce projet.");
+      }
+
+      if (!image) {
+        image = project.image;
+      } else {
+        // Supprimer l'ancienne image du serveur (optionnel)
+        if (project.image && fs.existsSync(`public/${project.image}`)) {
+          fs.unlink(`public/${project.image}`, (err) => {
+            if (err) {
+              console.error("Erreur lors de la suppression de l'ancienne image:", err.message);
+            } else {
+              console.log('Ancienne image supprimée avec succès.');
+            }
+          });
+        }
+      }
+
+      const updateProjectQuery = `
+        UPDATE projects
+        SET name = ?, description = ?, category = ?, image = ?
+        WHERE id = ?
+      `;
+
+      db.run(updateProjectQuery, [name, description, category, image, projectId], function (err) {
+        if (err) {
+          console.error("Erreur lors de la mise à jour du projet:", err.message);
+          return res.status(500).send("Erreur lors de la mise à jour du projet.");
+        } else {
+          res.redirect(`/projets/${projectId}`);
+        }
       });
     });
-    return;
   }
-
-  const { name, description, category } = req.body;
-  let image = req.file ? `uploads/${req.file.filename}` : null;
-
-  const projectQuery = `
-    SELECT * FROM projects
-    WHERE id = ?
-  `;
-
-  db.get(projectQuery, [projectId], (err, project) => {
-    if (err) {
-      console.error('Erreur lors de la récupération du projet:', err.message);
-      return res.status(500).send('Erreur serveur');
-    }
-
-    if (!project) {
-      return res.status(404).send('Projet non trouvé');
-    }
-
-    if (userId !== project.userId && req.session.username !== adminUsername) {
-      return res.status(403).send("Vous n'êtes pas autorisé à modifier ce projet.");
-    }
-
-    if (!image) {
-      image = project.image;
-    } else {
-      // Supprimer l'ancienne image du serveur (optionnel)
-      if (project.image && fs.existsSync(`public/${project.image}`)) {
-        fs.unlink(`public/${project.image}`, (err) => {
-          if (err) {
-            console.error('Erreur lors de la suppression de l\'ancienne image:', err.message);
-          } else {
-            console.log('Ancienne image supprimée avec succès.');
-          }
-        });
-      }
-    }
-
-    const updateProjectQuery = `
-      UPDATE projects
-      SET name = ?, description = ?, category = ?, image = ?
-      WHERE id = ?
-    `;
-
-    db.run(updateProjectQuery, [name, description, category, image, projectId], function (err) {
-      if (err) {
-        console.error("Erreur lors de la mise à jour du projet:", err.message);
-        return res.status(500).send("Erreur lors de la mise à jour du projet.");
-      } else {
-        res.redirect(`/projets/${projectId}`);
-      }
-    });
-  });
-});
+);
 
 // Route pour afficher la page de connexion
 app.get('/login', csrfMiddleware, (req, res) => {
@@ -795,69 +853,75 @@ app.get('/login', csrfMiddleware, (req, res) => {
 });
 
 // Route pour gérer la connexion
-app.post('/login', csrfMiddleware, [
-  body('username').trim().notEmpty().withMessage('Le nom d\'utilisateur est requis.'),
-  body('password').notEmpty().withMessage('Le mot de passe est requis.'),
-], (req, res) => {
-  const errors = validationResult(req);
-  const isAjaxRequest = req.xhr || req.headers.accept.indexOf('json') > -1;
+app.post(
+  '/login',
+  csrfMiddleware,
+  [
+    body('username').trim().notEmpty().withMessage("Le nom d'utilisateur est requis."),
+    body('password').notEmpty().withMessage('Le mot de passe est requis.'),
+  ],
+  (req, res) => {
+    const errors = validationResult(req);
+    const acceptHeader = req.headers.accept || '';
+    const isAjaxRequest = req.xhr || acceptHeader.indexOf('json') > -1;
 
-  if (!errors.isEmpty()) {
-    if (isAjaxRequest) {
-      return res.status(400).json({ success: false, errors: errors.array() });
-    } else {
-      return res.status(400).render('login', {
-        title: 'Login',
-        errors: errors.array(),
-      });
-    }
-  }
-
-  const { username, password } = req.body;
-
-  db.get(`SELECT * FROM users WHERE username = ?`, [username], (err, row) => {
-    if (err) {
-      console.error("Erreur lors de la récupération de l'utilisateur:", err.message);
+    if (!errors.isEmpty()) {
       if (isAjaxRequest) {
-        return res.status(500).json({ success: false, message: 'Erreur du serveur' });
-      } else {
-        return res.status(500).render('login', {
-          title: 'Login',
-          errors: [{ msg: 'Erreur du serveur' }],
-        });
-      }
-    } else if (row) {
-      const hashedPassword = hashPassword(password, row.salt);
-      if (hashedPassword === row.password) {
-        req.session.username = username;
-        req.session.userId = row.id;
-        if (isAjaxRequest) {
-          return res.json({ success: true });
-        } else {
-          return res.redirect('/');
-        }
-      } else {
-        if (isAjaxRequest) {
-          return res.status(400).json({ success: false, message: 'Mot de passe incorrect' });
-        } else {
-          return res.status(400).render('login', {
-            title: 'Login',
-            errors: [{ msg: 'Mot de passe incorrect' }],
-          });
-        }
-      }
-    } else {
-      if (isAjaxRequest) {
-        return res.status(400).json({ success: false, message: 'Utilisateur non trouvé' });
+        return res.status(400).json({ success: false, errors: errors.array() });
       } else {
         return res.status(400).render('login', {
           title: 'Login',
-          errors: [{ msg: 'Utilisateur non trouvé' }],
+          errors: errors.array(),
         });
       }
     }
-  });
-});
+
+    const { username, password } = req.body;
+
+    db.get(`SELECT * FROM users WHERE username = ?`, [username], (err, row) => {
+      if (err) {
+        console.error("Erreur lors de la récupération de l'utilisateur:", err.message);
+        if (isAjaxRequest) {
+          return res.status(500).json({ success: false, message: 'Erreur du serveur' });
+        } else {
+          return res.status(500).render('login', {
+            title: 'Login',
+            errors: [{ msg: 'Erreur du serveur' }],
+          });
+        }
+      } else if (row) {
+        const hashedPassword = hashPassword(password, row.salt);
+        if (hashedPassword === row.password) {
+          req.session.username = username;
+          req.session.userId = row.id;
+          if (isAjaxRequest) {
+            return res.json({ success: true });
+          } else {
+            return res.redirect('/');
+          }
+        } else {
+          if (isAjaxRequest) {
+            return res.status(400).json({ success: false, message: 'Mot de passe incorrect' });
+          } else {
+            return res.status(400).render('login', {
+              title: 'Login',
+              errors: [{ msg: 'Mot de passe incorrect' }],
+            });
+          }
+        }
+      } else {
+        if (isAjaxRequest) {
+          return res.status(400).json({ success: false, message: 'Utilisateur non trouvé' });
+        } else {
+          return res.status(400).render('login', {
+            title: 'Login',
+            errors: [{ msg: 'Utilisateur non trouvé' }],
+          });
+        }
+      }
+    });
+  }
+);
 
 // Route pour afficher le formulaire de création de compte
 app.get('/register', csrfMiddleware, (req, res) => {
@@ -865,65 +929,85 @@ app.get('/register', csrfMiddleware, (req, res) => {
 });
 
 // Route pour la création de compte
-app.post('/register', csrfMiddleware, [
-  body('username').trim().notEmpty().withMessage('Le nom d\'utilisateur est requis.').isLength({ max: 50 }).withMessage('Le nom d\'utilisateur est trop long.'),
-  body('email').trim().notEmpty().withMessage('L\'email est requis.').isEmail().withMessage('Email invalide.').normalizeEmail(),
-  body('password').notEmpty().withMessage('Le mot de passe est requis.').isLength({ min: 6 }).withMessage('Le mot de passe doit contenir au moins 6 caractères.'),
-], (req, res) => {
-  const errors = validationResult(req);
-  const isAjaxRequest = req.xhr || req.headers.accept.indexOf('json') > -1;
+app.post(
+  '/register',
+  csrfMiddleware,
+  [
+    body('username')
+      .trim()
+      .notEmpty()
+      .withMessage("Le nom d'utilisateur est requis.")
+      .isLength({ max: 50 })
+      .withMessage("Le nom d'utilisateur est trop long."),
+    body('email')
+      .trim()
+      .notEmpty()
+      .withMessage("L'email est requis.")
+      .isEmail()
+      .withMessage('Email invalide.')
+      .normalizeEmail(),
+    body('password')
+      .notEmpty()
+      .withMessage('Le mot de passe est requis.')
+      .isLength({ min: 6 })
+      .withMessage('Le mot de passe doit contenir au moins 6 caractères.'),
+  ],
+  (req, res) => {
+    const errors = validationResult(req);
+    const isAjaxRequest = req.xhr || req.headers.accept.indexOf('json') > -1;
 
-  if (!errors.isEmpty()) {
-    if (isAjaxRequest) {
-      return res.status(400).json({ success: false, errors: errors.array() });
-    } else {
-      return res.status(400).render('register', {
-        title: 'Créer un compte',
-        errors: errors.array(),
-      });
-    }
-  }
-
-  const { username, email, password } = req.body;
-
-  const salt = generateSalt();
-  const hashedPassword = hashPassword(password, salt);
-
-  db.run(
-    `INSERT INTO users (username, email, password, salt) VALUES (?, ?, ?, ?)`,
-    [username, email, hashedPassword, salt],
-    function (err) {
-      if (err) {
-        console.error("Erreur lors de la création de l'utilisateur:", err.message);
-        if (err.code === 'SQLITE_CONSTRAINT') {
-          if (isAjaxRequest) {
-            return res.status(400).json({ success: false, message: 'Nom d\'utilisateur ou email déjà pris' });
-          } else {
-            return res.status(400).render('register', {
-              title: 'Créer un compte',
-              errors: [{ msg: 'Nom d\'utilisateur ou email déjà pris' }],
-            });
-          }
-        } else {
-          if (isAjaxRequest) {
-            return res.status(500).json({ success: false, message: 'Erreur du serveur' });
-          } else {
-            return res.status(500).render('register', {
-              title: 'Créer un compte',
-              errors: [{ msg: 'Erreur du serveur' }],
-            });
-          }
-        }
+    if (!errors.isEmpty()) {
+      if (isAjaxRequest) {
+        return res.status(400).json({ success: false, errors: errors.array() });
       } else {
-        if (isAjaxRequest) {
-          return res.json({ success: true, message: 'Compte créé avec succès' });
-        } else {
-          res.redirect('/login');
-        }
+        return res.status(400).render('register', {
+          title: 'Créer un compte',
+          errors: errors.array(),
+        });
       }
     }
-  );
-});
+
+    const { username, email, password } = req.body;
+
+    const salt = generateSalt();
+    const hashedPassword = hashPassword(password, salt);
+
+    db.run(
+      `INSERT INTO users (username, email, password, salt) VALUES (?, ?, ?, ?)`,
+      [username, email, hashedPassword, salt],
+      function (err) {
+        if (err) {
+          console.error("Erreur lors de la création de l'utilisateur:", err.message);
+          if (err.code === 'SQLITE_CONSTRAINT') {
+            if (isAjaxRequest) {
+              return res.status(400).json({ success: false, message: "Nom d'utilisateur ou email déjà pris" });
+            } else {
+              return res.status(400).render('register', {
+                title: 'Créer un compte',
+                errors: [{ msg: "Nom d'utilisateur ou email déjà pris" }],
+              });
+            }
+          } else {
+            if (isAjaxRequest) {
+              return res.status(500).json({ success: false, message: 'Erreur du serveur' });
+            } else {
+              return res.status(500).render('register', {
+                title: 'Créer un compte',
+                errors: [{ msg: 'Erreur du serveur' }],
+              });
+            }
+          }
+        } else {
+          if (isAjaxRequest) {
+            return res.json({ success: true, message: 'Compte créé avec succès' });
+          } else {
+            res.redirect('/login');
+          }
+        }
+      }
+    );
+  }
+);
 
 // Route pour la déconnexion
 app.get('/logout', (req, res) => {
@@ -937,7 +1021,7 @@ app.get('/logout', (req, res) => {
 });
 
 // Route pour afficher le profil de l'utilisateur
-app.get('/profile', isAuthenticated, (req, res) => {
+app.get('/profile', isAuthenticated, csrfMiddleware, (req, res) => {
   db.get(`SELECT * FROM users WHERE id = ?`, [req.session.userId], (err, row) => {
     if (err) {
       console.error("Erreur lors de la récupération de l'utilisateur:", err.message);
@@ -956,139 +1040,189 @@ app.get('/profile', isAuthenticated, (req, res) => {
 });
 
 // Route pour gérer le changement de mot de passe
-app.post('/change-password', isAuthenticated, csrfMiddleware, [
-  body('currentPassword').notEmpty().withMessage('Le mot de passe actuel est requis.'),
-  body('newPassword').notEmpty().withMessage('Le nouveau mot de passe est requis.').isLength({ min: 6 }).withMessage('Le nouveau mot de passe doit contenir au moins 6 caractères.'),
-], (req, res) => {
-  const errors = validationResult(req);
-  const isAjaxRequest = req.xhr || req.headers.accept.indexOf('json') > -1;
+app.post(
+  '/change-password',
+  isAuthenticated,
+  csrfMiddleware,
+  [
+    body('currentPassword').notEmpty().withMessage('Le mot de passe actuel est requis.'),
+    body('newPassword')
+      .notEmpty()
+      .withMessage('Le nouveau mot de passe est requis.')
+      .isLength({ min: 6 })
+      .withMessage('Le nouveau mot de passe doit contenir au moins 6 caractères.'),
+  ],
+  (req, res) => {
+    const errors = validationResult(req);
+    const isAjaxRequest = req.xhr || req.headers.accept.indexOf('json') > -1;
 
-  if (!errors.isEmpty()) {
-    if (isAjaxRequest) {
-      return res.status(400).json({ success: false, errors: errors.array() });
-    } else {
-      return res.status(400).send('Données invalides.');
+    if (!errors.isEmpty()) {
+      if (isAjaxRequest) {
+        return res.status(400).json({ success: false, errors: errors.array() });
+      } else {
+        return res.status(400).send('Données invalides.');
+      }
     }
+
+    const { currentPassword, newPassword } = req.body;
+    const userId = req.session.userId;
+
+    db.get('SELECT * FROM users WHERE id = ?', [userId], (err, row) => {
+      if (err) {
+        console.error("Erreur lors de la récupération de l'utilisateur:", err.message);
+        if (isAjaxRequest) {
+          return res.status(500).json({ success: false, message: 'Erreur du serveur' });
+        } else {
+          return res.status(500).send('Erreur du serveur');
+        }
+      }
+
+      if (!row) {
+        if (isAjaxRequest) {
+          return res.status(404).json({ success: false, message: 'Utilisateur non trouvé' });
+        } else {
+          return res.status(404).send('Utilisateur non trouvé');
+        }
+      }
+
+      const hashedCurrentPassword = hashPassword(currentPassword, row.salt);
+      if (hashedCurrentPassword !== row.password) {
+        if (isAjaxRequest) {
+          return res.status(400).json({ success: false, message: 'Mot de passe actuel incorrect' });
+        } else {
+          return res.status(400).send('Mot de passe actuel incorrect');
+        }
+      }
+
+      const salt = generateSalt();
+      const hashedNewPassword = hashPassword(newPassword, salt);
+
+      db.run(
+        `UPDATE users SET password = ?, salt = ? WHERE id = ?`,
+        [hashedNewPassword, salt, userId],
+        function (err) {
+          if (err) {
+            console.error("Erreur lors de la mise à jour du mot de passe:", err.message);
+            if (isAjaxRequest) {
+              return res.status(500).json({ success: false, message: 'Erreur du serveur' });
+            } else {
+              return res.status(500).send('Erreur du serveur');
+            }
+          } else {
+            req.session.destroy((err) => {
+              if (err) {
+                console.error(
+                  'Erreur lors de la déconnexion après le changement de mot de passe:',
+                  err.message
+                );
+                if (isAjaxRequest) {
+                  return res
+                    .status(500)
+                    .json({
+                      success: false,
+                      message: 'Erreur lors de la déconnexion après le changement de mot de passe',
+                    });
+                } else {
+                  return res.status(500).send('Erreur lors de la déconnexion');
+                }
+              }
+              if (isAjaxRequest) {
+                return res.json({
+                  success: true,
+                  message: 'Mot de passe mis à jour avec succès. Vous avez été déconnecté.',
+                  redirect: '/login',
+                });
+              } else {
+                res.redirect('/login');
+              }
+            });
+          }
+        }
+      );
+    });
   }
+);
 
-  const { currentPassword, newPassword } = req.body;
-  const userId = req.session.userId;
+// Route pour soumettre un commentaire
+app.post(
+  '/comments',
+  isAuthenticated,
+  csrfMiddleware,
+  [
+    body('comment').trim().notEmpty().withMessage('Le commentaire est requis.'),
+    body('projectId').isInt().withMessage('ID de projet invalide.'),
+  ],
+  (req, res) => {
+    console.log('Requête reçue pour /comments');
+    console.log('En-têtes de la requête:', req.headers);
+    console.log('Jeton CSRF reçu:', req.headers['x-csrf-token']);
+    console.log('Session utilisateur:', req.session);
 
-  db.get('SELECT * FROM users WHERE id = ?', [userId], (err, row) => {
-    if (err) {
-      console.error("Erreur lors de la récupération de l'utilisateur:", err.message);
-      if (isAjaxRequest) {
-        return res.status(500).json({ success: false, message: 'Erreur du serveur' });
-      } else {
-        return res.status(500).send('Erreur du serveur');
-      }
+    const errors = validationResult(req);
+
+    if (!errors.isEmpty()) {
+      // Renvoyer toujours du JSON en cas d'erreur de validation
+      return res.status(400).json({ success: false, errors: errors.array() });
     }
 
-    if (!row) {
-      if (isAjaxRequest) {
-        return res.status(404).json({ success: false, message: 'Utilisateur non trouvé' });
-      } else {
-        return res.status(404).send('Utilisateur non trouvé');
-      }
-    }
+    const { comment, projectId } = req.body;
+    const userId = req.session.userId;
+    const date = new Date().toISOString();
 
-    const hashedCurrentPassword = hashPassword(currentPassword, row.salt);
-    if (hashedCurrentPassword !== row.password) {
-      if (isAjaxRequest) {
-        return res.status(400).json({ success: false, message: 'Mot de passe actuel incorrect' });
-      } else {
-        return res.status(400).send('Mot de passe actuel incorrect');
-      }
-    }
-
-    const salt = generateSalt();
-    const hashedNewPassword = hashPassword(newPassword, salt);
-
+    // Insertion du commentaire dans la base de données
     db.run(
-      `UPDATE users SET password = ?, salt = ? WHERE id = ?`,
-      [hashedNewPassword, salt, userId],
+      `INSERT INTO comments (projectId, userId, comment, date) VALUES (?, ?, ?, ?)`,
+      [projectId, userId, comment, date],
       function (err) {
         if (err) {
-          console.error("Erreur lors de la mise à jour du mot de passe:", err.message);
-          if (isAjaxRequest) {
-            return res.status(500).json({ success: false, message: 'Erreur du serveur' });
-          } else {
-            return res.status(500).send('Erreur du serveur');
-          }
+          console.error("Erreur lors de l'ajout du commentaire:", err.message);
+          return res
+            .status(500)
+            .json({ success: false, message: "Erreur lors de l'ajout du commentaire." });
         } else {
-          req.session.destroy((err) => {
+          // Récupérer le commentaire ajouté avec le username
+          const commentId = this.lastID;
+          const getCommentQuery = `
+            SELECT comments.*, users.username
+            FROM comments
+            JOIN users ON comments.userId = users.id
+            WHERE comments.id = ?
+          `;
+          db.get(getCommentQuery, [commentId], (err, newComment) => {
             if (err) {
-              console.error('Erreur lors de la déconnexion après le changement de mot de passe:', err.message);
-              if (isAjaxRequest) {
-                return res.status(500).json({ success: false, message: 'Erreur lors de la déconnexion après le changement de mot de passe' });
-              } else {
-                return res.status(500).send('Erreur lors de la déconnexion');
-              }
-            }
-            if (isAjaxRequest) {
-              return res.json({ success: true, message: 'Mot de passe mis à jour avec succès. Vous avez été déconnecté.', redirect: '/login' });
+              console.error('Erreur lors de la récupération du commentaire:', err.message);
+              return res
+                .status(500)
+                .json({ success: false, message: "Erreur lors de la récupération du commentaire." });
             } else {
-              res.redirect('/login');
+              // Ajouter des informations supplémentaires nécessaires pour le front-end
+              newComment.canDelete = true; // L'utilisateur peut supprimer son propre commentaire
+              newComment.reactions = {}; // Pas de réactions initialement
+              return res.json({
+                success: true,
+                message: 'Commentaire ajouté avec succès.',
+                comment: newComment,
+              });
             }
           });
         }
       }
     );
-  });
-});
-
-// Route pour soumettre un commentaire
-app.post('/comments', isAuthenticated, csrfMiddleware, [
-  body('comment').trim().notEmpty().withMessage('Le commentaire est requis.'),
-  body('projectId').isInt().withMessage('ID de projet invalide.'),
-], (req, res) => {
-  const errors = validationResult(req);
-  const isAjaxRequest = req.xhr || req.headers.accept.indexOf('json') > -1;
-
-  if (!errors.isEmpty()) {
-    if (isAjaxRequest) {
-      return res.status(400).json({ success: false, errors: errors.array() });
-    } else {
-      return res.status(400).send('Données invalides.');
-    }
   }
+);
 
-  const { comment, projectId } = req.body;
-  const userId = req.session.userId;
-  const date = new Date().toISOString();
-
-  // Insertion du commentaire dans la base de données
-  db.run(
-    `INSERT INTO comments (projectId, userId, comment, date) VALUES (?, ?, ?, ?)`,
-    [projectId, userId, comment, date],
-    function (err) {
-      if (err) {
-        console.error("Erreur lors de l'ajout du commentaire:", err.message);
-        if (isAjaxRequest) {
-          return res.status(500).json({ success: false, message: "Erreur lors de l'ajout du commentaire." });
-        } else {
-          return res.status(500).send("Erreur lors de l'ajout du commentaire.");
-        }
-      } else {
-        if (isAjaxRequest) {
-          return res.json({ success: true, message: 'Commentaire ajouté avec succès.' });
-        } else {
-          res.redirect(`/projets/${projectId}`);
-        }
-      }
-    }
-  );
-});
 
 // Route pour gérer les réactions aux commentaires
 app.post('/react/:commentId', isAuthenticated, csrfMiddleware, (req, res) => {
-  const { commentId } = req.params;
-  const { emoji } = req.body;
-  const userId = req.session.userId;
+  const commentId = parseInt(req.params.commentId, 10);
+  const userId = parseInt(req.session.userId, 10);
+  const emoji = req.body.emoji.trim();
   const date = new Date().toISOString();
 
+  console.log('Tentative de réaction :', { commentId, emoji, userId });
+
   // Validation des données reçues
-  if (!commentId || !emoji) {
+  if (isNaN(commentId) || isNaN(userId) || !emoji) {
     return res.status(400).json({ success: false, message: 'Données invalides.' });
   }
 
@@ -1104,6 +1238,8 @@ app.post('/react/:commentId', isAuthenticated, csrfMiddleware, (req, res) => {
       return res.status(500).json({ success: false, message: 'Erreur serveur.' });
     }
 
+    console.log('Résultat de la vérification de la réaction :', row);
+
     if (row) {
       // La réaction existe, on la supprime (toggle off)
       const deleteReactionQuery = `
@@ -1112,7 +1248,9 @@ app.post('/react/:commentId', isAuthenticated, csrfMiddleware, (req, res) => {
       db.run(deleteReactionQuery, [row.id], function (err) {
         if (err) {
           console.error('Erreur lors de la suppression de la réaction:', err);
-          return res.status(500).json({ success: false, message: 'Erreur lors de la suppression de la réaction.' });
+          return res
+            .status(500)
+            .json({ success: false, message: 'Erreur lors de la suppression de la réaction.' });
         }
         // Compter le nombre total de réactions pour cet emoji sur le commentaire
         const countReactionsQuery = `
@@ -1123,7 +1261,9 @@ app.post('/react/:commentId', isAuthenticated, csrfMiddleware, (req, res) => {
         db.get(countReactionsQuery, [commentId, emoji], (err, countRow) => {
           if (err) {
             console.error('Erreur lors du comptage des réactions:', err);
-            return res.status(500).json({ success: false, message: 'Erreur lors du comptage des réactions.' });
+            return res
+              .status(500)
+              .json({ success: false, message: 'Erreur lors du comptage des réactions.' });
           } else {
             res.json({ success: true, updatedCount: countRow.count, userHasReacted: false });
           }
@@ -1137,8 +1277,10 @@ app.post('/react/:commentId', isAuthenticated, csrfMiddleware, (req, res) => {
       `;
       db.run(insertReactionQuery, [commentId, userId, emoji, date], function (err) {
         if (err) {
-          console.error("Erreur lors de l'ajout de la réaction:", err);
-          return res.status(500).json({ success: false, message: "Erreur lors de l'ajout de la réaction." });
+          console.error('Erreur lors de l\'ajout de la réaction:', err);
+          return res
+            .status(500)
+            .json({ success: false, message: 'Erreur lors de l\'ajout de la réaction.' });
         }
         // Compter le nombre total de réactions pour cet emoji sur le commentaire
         const countReactionsQuery = `
@@ -1149,7 +1291,9 @@ app.post('/react/:commentId', isAuthenticated, csrfMiddleware, (req, res) => {
         db.get(countReactionsQuery, [commentId, emoji], (err, countRow) => {
           if (err) {
             console.error('Erreur lors du comptage des réactions:', err);
-            return res.status(500).json({ success: false, message: 'Erreur lors du comptage des réactions.' });
+            return res
+              .status(500)
+              .json({ success: false, message: 'Erreur lors du comptage des réactions.' });
           } else {
             res.json({ success: true, updatedCount: countRow.count, userHasReacted: true });
           }
@@ -1160,7 +1304,7 @@ app.post('/react/:commentId', isAuthenticated, csrfMiddleware, (req, res) => {
 });
 
 // Route pour supprimer un commentaire, avec suppression des réactions associées
-app.delete('/comments/:id', isAuthenticated, (req, res) => {
+app.delete('/comments/:id', isAuthenticated, csrfMiddleware, (req, res) => {
   const commentId = req.params.id;
   const userId = req.session.userId; // ID de l'utilisateur connecté
   const adminUsername = process.env.ADMIN_USERNAME; // Nom d'utilisateur admin défini dans .env
@@ -1168,7 +1312,7 @@ app.delete('/comments/:id', isAuthenticated, (req, res) => {
   // Récupération des informations de l'utilisateur connecté
   db.get(`SELECT * FROM users WHERE id = ?`, [userId], (err, user) => {
     if (err) {
-      console.error('Erreur lors de la vérification de l\'utilisateur:', err.message);
+      console.error("Erreur lors de la vérification de l'utilisateur:", err.message);
       return res.status(500).send('Erreur serveur.');
     }
 
@@ -1208,7 +1352,7 @@ app.delete('/comments/:id', isAuthenticated, (req, res) => {
       }
 
       if (!comment) {
-        return res.status(403).send('Vous n\'êtes pas autorisé à supprimer ce commentaire.');
+        return res.status(403).send("Vous n'êtes pas autorisé à supprimer ce commentaire.");
       }
 
       deleteComment();
@@ -1217,14 +1361,14 @@ app.delete('/comments/:id', isAuthenticated, (req, res) => {
 });
 
 // Route pour supprimer un projet (accessible à l'administrateur et au créateur du projet)
-app.delete('/projets/:id', isAuthenticated, (req, res) => {
+app.delete('/projets/:id', isAuthenticated, csrfMiddleware, (req, res) => {
   const projectId = req.params.id;
   const userId = req.session.userId;
   const adminUsername = process.env.ADMIN_USERNAME;
 
   db.get(`SELECT * FROM users WHERE id = ?`, [userId], (err, user) => {
     if (err) {
-      console.error('Erreur lors de la vérification de l\'utilisateur:', err.message);
+      console.error("Erreur lors de la vérification de l'utilisateur:", err.message);
       return res.status(500).send('Erreur serveur.');
     }
 
@@ -1245,7 +1389,7 @@ app.delete('/projets/:id', isAuthenticated, (req, res) => {
         }
 
         if (!project) {
-          return res.status(403).send('Vous n\'êtes pas autorisé à supprimer ce projet.');
+          return res.status(403).send("Vous n'êtes pas autorisé à supprimer ce projet.");
         }
 
         deleteProject();
@@ -1254,30 +1398,34 @@ app.delete('/projets/:id', isAuthenticated, (req, res) => {
 
     function deleteProject() {
       // Supprimer les réactions associées aux commentaires du projet
-      db.run(`DELETE FROM comment_reactions WHERE comment_id IN (SELECT id FROM comments WHERE projectId = ?)`, [projectId], function (err) {
-        if (err) {
-          console.error('Erreur lors de la suppression des réactions associées:', err.message);
-          return res.status(500).send('Erreur lors de la suppression des réactions associées.');
-        }
-
-        // Supprimer les commentaires associés au projet
-        db.run(`DELETE FROM comments WHERE projectId = ?`, [projectId], function (err) {
+      db.run(
+        `DELETE FROM comment_reactions WHERE comment_id IN (SELECT id FROM comments WHERE projectId = ?)`,
+        [projectId],
+        function (err) {
           if (err) {
-            console.error('Erreur lors de la suppression des commentaires associés:', err.message);
-            return res.status(500).send('Erreur lors de la suppression des commentaires associés.');
+            console.error('Erreur lors de la suppression des réactions associées:', err.message);
+            return res.status(500).send('Erreur lors de la suppression des réactions associées.');
           }
 
-          // Supprimer le projet
-          db.run(`DELETE FROM projects WHERE id = ?`, [projectId], function (err) {
+          // Supprimer les commentaires associés au projet
+          db.run(`DELETE FROM comments WHERE projectId = ?`, [projectId], function (err) {
             if (err) {
-              console.error('Erreur lors de la suppression du projet:', err.message);
-              return res.status(500).send('Erreur lors de la suppression du projet.');
+              console.error('Erreur lors de la suppression des commentaires associés:', err.message);
+              return res.status(500).send('Erreur lors de la suppression des commentaires associés.');
             }
 
-            res.status(200).send('Projet supprimé avec succès.');
+            // Supprimer le projet
+            db.run(`DELETE FROM projects WHERE id = ?`, [projectId], function (err) {
+              if (err) {
+                console.error('Erreur lors de la suppression du projet:', err.message);
+                return res.status(500).send('Erreur lors de la suppression du projet.');
+              }
+
+              res.status(200).send('Projet supprimé avec succès.');
+            });
           });
-        });
-      });
+        }
+      );
     }
   });
 });
