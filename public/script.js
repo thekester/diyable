@@ -1,7 +1,9 @@
 // script.js
 
-// DOMContentLoaded pour s'assurer que le script s'exécute après le chargement de la page
 document.addEventListener('DOMContentLoaded', function () {
+  // Récupérer le jeton CSRF depuis la balise meta
+  const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
   // Sélection des boutons de filtre
   const filterButtons = document.querySelectorAll('.filter-button');
   const projectCards = document.querySelectorAll('.project-card');
@@ -81,25 +83,6 @@ document.addEventListener('DOMContentLoaded', function () {
   if (commentForm) {
     commentForm.addEventListener('submit', function (event) {
       // Pas de prévention de l'action par défaut ici, car le formulaire sera soumis et la page rechargée
-      // Si vous souhaitez gérer l'envoi du formulaire en AJAX, vous pouvez décommenter les lignes ci-dessous
-      /*
-      event.preventDefault(); // Empêche la soumission classique du formulaire
-      const formData = new FormData(this);
-      fetch(this.action, {
-        method: 'POST',
-        body: formData
-      })
-        .then((response) => {
-          if (response.ok) {
-            // Gérer la mise à jour des commentaires sans recharger la page
-          } else {
-            alert("Erreur lors de l'envoi du commentaire.");
-          }
-        })
-        .catch((error) => {
-          console.error('Erreur réseau:', error);
-        });
-      */
     });
   }
 
@@ -112,7 +95,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
     fetch(`/react/${commentId}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'CSRF-Token': csrfToken,
+      },
       body: JSON.stringify({ emoji }),
     })
       .then((response) => response.json())
@@ -137,22 +124,6 @@ document.addEventListener('DOMContentLoaded', function () {
       });
   }
 
-  // Fonction pour rendre les boutons de réaction et attacher les événements
-  function renderReactions(comment) {
-    const reactions = ['👍', '💩', '❤️', '😂'];
-    let html = '';
-    reactions.forEach((emoji) => {
-      const count = comment.reactions && comment.reactions[emoji] ? comment.reactions[emoji] : 0;
-      html += `<button
-          type="button"
-          class="reaction-button"
-          data-comment-id="${comment.id}"
-          data-emoji="${emoji}"
-        >${emoji} <span class="reaction-count">${count}</span></button> `;
-    });
-    return html;
-  }
-
   // Attacher les événements aux boutons de réaction
   function attachReactionEventListeners() {
     const reactionButtons = document.querySelectorAll('.reaction-button');
@@ -161,54 +132,89 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  // Fonction pour gérer la suppression d'un commentaire
-  function deleteComment(event) {
+  // Fonction pour gérer la suppression (commentaires et projets)
+  function deleteItem(event) {
     event.preventDefault();
     const button = event.currentTarget;
-    const commentId = button.getAttribute('data-comment-id');
 
-    // Demande de confirmation avant de supprimer
-    if (!confirm('Êtes-vous sûr de vouloir supprimer ce commentaire ?')) {
-      return;
+    if (button.hasAttribute('data-comment-id')) {
+      // Suppression d'un commentaire
+      const commentId = button.getAttribute('data-comment-id');
+
+      if (!confirm('Êtes-vous sûr de vouloir supprimer ce commentaire ?')) {
+        return;
+      }
+
+      button.disabled = true;
+      button.innerHTML = '<i class="fa fa-spinner fa-spin"></i>';
+
+      fetch(`/comments/${commentId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'CSRF-Token': csrfToken,
+        },
+      })
+        .then((response) => {
+          if (response.ok) {
+            const commentElement = button.closest('.comment');
+            if (commentElement) {
+              commentElement.remove();
+            }
+          } else {
+            console.error('Erreur lors de la suppression du commentaire.');
+            button.disabled = false;
+            button.innerHTML = '<i class="fa fa-trash"></i>';
+          }
+        })
+        .catch((error) => {
+          console.error('Erreur réseau :', error);
+          button.disabled = false;
+          button.innerHTML = '<i class="fa fa-trash"></i>';
+        });
+    } else if (button.hasAttribute('data-project-id')) {
+      // Suppression d'un projet
+      const projectId = button.getAttribute('data-project-id');
+
+      if (!confirm('Êtes-vous sûr de vouloir supprimer ce projet ?')) {
+        return;
+      }
+
+      button.disabled = true;
+      button.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Suppression...';
+
+      fetch(`/projets/${projectId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'CSRF-Token': csrfToken,
+        },
+      })
+        .then((response) => {
+          if (response.ok) {
+            window.location.href = '/projets';
+          } else {
+            return response.text().then((text) => {
+              throw new Error(text);
+            });
+          }
+        })
+        .catch((error) => {
+          console.error('Erreur lors de la suppression du projet :', error);
+          alert('Erreur lors de la suppression du projet : ' + error.message);
+          button.disabled = false;
+          button.innerHTML = '<i class="fa fa-trash"></i> Supprimer ce projet';
+        });
     }
-
-    // Désactivation du bouton pour éviter les clics multiples
-    button.disabled = true;
-    button.textContent = 'Suppression...';
-
-    // Envoi de la requête de suppression
-    console.log('Suppression du commentaire avec ID:', commentId);
-    fetch(`/comments/${commentId}`, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    })
-    .then(response => {
-      if (response.ok) {
-        // Suppression du commentaire du DOM
-        const commentElement = button.closest('.comment');
-        if (commentElement) {
-          commentElement.remove();
-        }
-      } else {
-        console.error('Erreur lors de la suppression du commentaire.');
-        button.disabled = false; // Réactivation du bouton si la suppression échoue
-        button.textContent = ''; // Remettre le texte original ou icône
-      }
-    })
-    .catch(error => {
-      console.error('Erreur réseau :', error);
-      button.disabled = false; // Réactivation du bouton
-      button.textContent = ''; // Remettre le texte original ou icône
-    });
   }
 
-  // Attache les événements aux boutons de suppression
+  // Attacher l'événement aux boutons de suppression
   function attachDeleteEventListeners() {
-    const deleteButtons = document.querySelectorAll('.delete-button');
-    deleteButtons.forEach(button => {
-      button.addEventListener('click', deleteComment);
+    const deleteButtons = document.querySelectorAll('.delete-button, .delete-button2');
+    deleteButtons.forEach((button) => {
+      button.addEventListener('click', deleteItem);
     });
   }
 
@@ -246,22 +252,24 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 
-
   function showNotification(type, message, callback, countdownSeconds) {
     const notification = document.getElementById('notification');
     notification.className = 'notification'; // Réinitialiser les classes
     if (type === 'success') {
       notification.classList.add('success');
+    } else if (type === 'error') {
+      notification.classList.add('error');
     }
     notification.style.display = 'block';
-  
+
     if (countdownSeconds && countdownSeconds > 0) {
       let remainingSeconds = countdownSeconds;
-      notification.textContent = `${message} Vous allez être déconnecté dans ${remainingSeconds} seconde(s).`;
+      const originalMessage = message;
+      notification.textContent = `${message} Vous serez redirigé dans ${remainingSeconds} seconde(s).`;
       const intervalId = setInterval(() => {
         remainingSeconds--;
         if (remainingSeconds > 0) {
-          notification.textContent = `${message} Vous allez être déconnecté dans ${remainingSeconds} seconde(s).`;
+          notification.textContent = `${originalMessage} Vous serez redirigé dans ${remainingSeconds} seconde(s).`;
         } else {
           clearInterval(intervalId);
           notification.style.display = 'none';
@@ -277,8 +285,6 @@ document.addEventListener('DOMContentLoaded', function () {
       }, 3000);
     }
   }
-  
-  
 
   const loginForm = document.getElementById('loginForm');
   const registerForm = document.getElementById('registerForm');
@@ -291,102 +297,176 @@ document.addEventListener('DOMContentLoaded', function () {
       const formData = new FormData(loginForm);
       const data = {
         username: formData.get('username'),
-        password: formData.get('password')
+        password: formData.get('password'),
       };
 
       fetch('/login', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'CSRF-Token': csrfToken,
         },
-        body: JSON.stringify(data)
+        body: JSON.stringify(data),
       })
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-          showNotification('success', 'Connexion réussie !');
-          window.location.href = '/';
-        } else {
-          showNotification('error', data.message); // Affiche l'erreur
-        }
-      })
-      .catch(error => {
-        showNotification('error', 'Une erreur est survenue.');
-        console.error('Erreur réseau:', error);
-      });
+        .then((response) => {
+          if (!response.ok) {
+            return response.json().then((data) => {
+              throw data;
+            });
+          }
+          return response.json();
+        })
+        .then((data) => {
+          if (data.success) {
+            const countdownSeconds = 3; // Durée du compte à rebours en secondes
+            showNotification(
+              'success',
+              'Connexion réussie !',
+              () => {
+                window.location.href = '/';
+              },
+              countdownSeconds
+            );
+          } else {
+            if (data.errors) {
+              const errorMessages = data.errors.map((err) => err.msg).join('<br>');
+              showNotification('error', errorMessages);
+            } else {
+              showNotification('error', data.message || 'Une erreur est survenue.');
+            }
+          }
+        })
+        .catch((error) => {
+          if (error && error.errors) {
+            const errorMessages = error.errors.map((err) => err.msg).join('<br>');
+            showNotification('error', errorMessages);
+          } else {
+            showNotification('error', error.message || 'Une erreur est survenue.');
+          }
+          console.error('Erreur réseau:', error);
+        });
     });
   }
 
   if (registerForm) {
     registerForm.addEventListener('submit', function (event) {
       event.preventDefault();
-  
+
       const formData = new FormData(registerForm);
       const data = {
         username: formData.get('username'),
         email: formData.get('email'),
-        password: formData.get('password')
+        password: formData.get('password'),
       };
-  
+
       fetch('/register', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'CSRF-Token': csrfToken,
         },
-        body: JSON.stringify(data)
+        body: JSON.stringify(data),
       })
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-          showNotification('success', data.message);  // Affiche une notification de succès
-          window.location.href = '/login';  // Redirige vers la page de connexion
-        } else {
-          showNotification('error', data.message);  // Affiche l'erreur
-        }
-      })
-      .catch(error => {
-        showNotification('error', 'Une erreur est survenue.');
-        console.error('Erreur réseau:', error);
-      });
+        .then((response) => {
+          if (!response.ok) {
+            return response.json().then((data) => {
+              throw data;
+            });
+          }
+          return response.json();
+        })
+        .then((data) => {
+          if (data.success) {
+            const countdownSeconds = 3; // Durée du compte à rebours en secondes
+            showNotification(
+              'success',
+              data.message,
+              () => {
+                window.location.href = '/login';
+              },
+              countdownSeconds
+            );
+          } else {
+            if (data.errors) {
+              const errorMessages = data.errors.map((err) => err.msg).join('<br>');
+              showNotification('error', errorMessages);
+            } else {
+              showNotification('error', data.message || 'Une erreur est survenue.');
+            }
+          }
+        })
+        .catch((error) => {
+          if (error && error.errors) {
+            const errorMessages = error.errors.map((err) => err.msg).join('<br>');
+            showNotification('error', errorMessages);
+          } else {
+            showNotification('error', error.message || 'Une erreur est survenue.');
+          }
+          console.error('Erreur réseau:', error);
+        });
     });
-  }  
-  
+  }
+
   if (changePasswordForm) {
     changePasswordForm.addEventListener('submit', function (event) {
       event.preventDefault();
-  
+
       const formData = new FormData(changePasswordForm);
       const data = {
         currentPassword: formData.get('currentPassword'),
-        newPassword: formData.get('newPassword')
+        newPassword: formData.get('newPassword'),
       };
-  
+
       fetch('/change-password', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'CSRF-Token': csrfToken,
         },
-        body: JSON.stringify(data)
+        body: JSON.stringify(data),
       })
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-          const countdownSeconds = 3; // Durée du compte à rebours en secondes
-          showNotification('success', data.message, () => {
-            if (data.redirect) {
-              window.location.href = data.redirect;
+        .then((response) => {
+          if (!response.ok) {
+            return response.json().then((data) => {
+              throw data;
+            });
+          }
+          return response.json();
+        })
+        .then((data) => {
+          if (data.success) {
+            const countdownSeconds = 3; // Durée du compte à rebours en secondes
+            showNotification(
+              'success',
+              data.message,
+              () => {
+                if (data.redirect) {
+                  window.location.href = data.redirect;
+                }
+              },
+              countdownSeconds
+            );
+          } else {
+            if (data.errors) {
+              const errorMessages = data.errors.map((err) => err.msg).join('<br>');
+              showNotification('error', errorMessages);
+            } else {
+              showNotification('error', data.message || 'Une erreur est survenue.');
             }
-          }, countdownSeconds);
-        } else {
-          showNotification('error', data.message);  // Affiche l'erreur
-        }
-      })
-      .catch(error => {
-        showNotification('error', 'Une erreur est survenue.');
-        console.error('Erreur réseau:', error);
-      });
+          }
+        })
+        .catch((error) => {
+          if (error && error.errors) {
+            const errorMessages = error.errors.map((err) => err.msg).join('<br>');
+            showNotification('error', errorMessages);
+          } else {
+            showNotification('error', error.message || 'Une erreur est survenue.');
+          }
+          console.error('Erreur réseau:', error);
+        });
     });
   }
-  
-
 });

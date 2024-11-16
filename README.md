@@ -76,7 +76,7 @@ diyable/
 
 4. **Install Dependencies**:
 ```sh
-   npm install express pug sqlite3 dotenv body-parser express-session
+   npm install express pug sqlite3 dotenv body-parser express-session multer csurf express-validator
 ```
 
 ## Configuration in the .env
