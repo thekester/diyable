@@ -9,6 +9,15 @@ block content
     p Catégorie: #{project.category}
     a(href="/projets") Retour aux projets
 
+    if username === adminUsername
+      button.delete-button2(
+        type="button"
+        data-project-id=project.id
+        title="Supprimer ce projet"
+      )
+        i.fa.fa-trash(style="color: white; margin-right: 5px;")
+        | Supprimer ce projet
+
   section.comment
     h2 Commentaires
     if username
@@ -27,7 +36,7 @@ block content
               span.comment-date #{new Date(comment.date).toLocaleDateString('fr-FR')}
             .comment-body.comment-box
               p= comment.comment
-              if comment.userId === currentUserId || username === process.env.ADMIN_USERNAME
+              if comment.userId === currentUserId || username === adminUsername
                 button.delete-button(
                   type="button"
                   data-comment-id=comment.id
@@ -43,7 +52,7 @@ block content
                   class="reaction-button"
                   data-comment-id=comment.id
                   data-emoji=emoji
-                ) #{emoji} 
+                ) #{emoji}
                   span.reaction-count #{count}
       else
         p Aucun commentaire pour le moment.

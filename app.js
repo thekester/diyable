@@ -550,6 +550,7 @@ app.post('/projets/ajouter', isAuthenticated, upload.single('image'), (req, res)
 app.get('/projets/:id', (req, res) => {
   const projectId = req.params.id;
   const userId = req.session.userId;
+  const adminUsername = process.env.ADMIN_USERNAME;
 
   // Requête pour récupérer les détails du projet
   const projectQuery = `
@@ -594,6 +595,7 @@ app.get('/projets/:id', (req, res) => {
           projectId,
           username: req.session.username,
           currentUserId: userId,
+          adminUsername: adminUsername,
         });
       }
 
@@ -634,6 +636,7 @@ app.get('/projets/:id', (req, res) => {
           projectId,
           username: req.session.username,
           currentUserId: userId,
+          adminUsername: adminUsername,
         });
       });
     });
@@ -793,7 +796,6 @@ app.post('/change-password', (req, res) => {
     );
   });
 });
-
 
 // Route pour soumettre un commentaire
 app.post('/comments', (req, res) => {
@@ -966,6 +968,60 @@ app.delete('/comments/:id', (req, res) => {
       }
 
       deleteComment();
+    });
+  });
+});
+
+// Route pour supprimer un projet (accessible uniquement à l'admin)
+app.delete('/projets/:id', (req, res) => {
+  const projectId = req.params.id;
+  const userId = req.session.userId; // ID de l'utilisateur connecté
+  const adminUsername = process.env.ADMIN_USERNAME;
+
+  if (!userId) {
+    return res.status(403).send('Vous devez être connecté pour supprimer des projets.');
+  }
+
+  // Récupération des informations de l'utilisateur connecté
+  db.get(`SELECT * FROM users WHERE id = ?`, [userId], (err, user) => {
+    if (err) {
+      console.error('Erreur lors de la vérification de l\'utilisateur:', err.message);
+      return res.status(500).send('Erreur serveur.');
+    }
+
+    if (!user) {
+      return res.status(403).send('Utilisateur non trouvé.');
+    }
+
+    // Vérifier si l'utilisateur est l'admin
+    if (user.username !== adminUsername) {
+      return res.status(403).send('Vous n\'êtes pas autorisé à supprimer ce projet.');
+    }
+
+    // Supprimer les réactions associées aux commentaires du projet
+    db.run(`DELETE FROM comment_reactions WHERE comment_id IN (SELECT id FROM comments WHERE projectId = ?)`, [projectId], function(err) {
+      if (err) {
+        console.error('Erreur lors de la suppression des réactions associées:', err.message);
+        return res.status(500).send('Erreur lors de la suppression des réactions associées.');
+      }
+
+      // Supprimer les commentaires associés au projet
+      db.run(`DELETE FROM comments WHERE projectId = ?`, [projectId], function(err) {
+        if (err) {
+          console.error('Erreur lors de la suppression des commentaires associés:', err.message);
+          return res.status(500).send('Erreur lors de la suppression des commentaires associés.');
+        }
+
+        // Supprimer le projet
+        db.run(`DELETE FROM projects WHERE id = ?`, [projectId], function(err) {
+          if (err) {
+            console.error('Erreur lors de la suppression du projet:', err.message);
+            return res.status(500).send('Erreur lors de la suppression du projet.');
+          }
+
+          res.status(200).send('Projet supprimé avec succès.');
+        });
+      });
     });
   });
 });
