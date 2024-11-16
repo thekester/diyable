@@ -1,22 +1,63 @@
 /* Variables de couleur */
 :root {
   --primary-color: #007bff; /* Bleu principal */
+  --primary-color-hover: #0056b3;
   --secondary-color: #28a745; /* Vert pour les accents */
+  --secondary-color-hover: #218838;
   --text-color: #333;
   --background-color: #f7f7f7;
+  --button-text-color: #fff;
+  --hero-background: linear-gradient(135deg, #6db3f2 0%, #1e69de 100%);
+  --hero-text-color: #fff;
+  --footer-background-color: #fff;
+  --footer-text-color: #333;
+  --link-color: #555;
+  --link-hover-color: var(--secondary-color);
+  --comment-box-background: #eef2f7;
+  --comment-date-color: #888;
+  --delete-button-color: red;
+  --delete-button-hover-color: darkred;
 }
 
-/* Importation des polices */
+body.dark-mode {
+  --primary-color: #90caf9; /* Bleu clair pour le mode sombre */
+  --primary-color-hover: #5f9ea0;
+  --secondary-color: #66bb6a; /* Vert clair pour le mode sombre */
+  --secondary-color-hover: #4caf50;
+  --text-color: #e0e0e0;
+  --background-color: #121212;
+  --button-text-color: #121212;
+  --hero-background: linear-gradient(135deg, #0d47a1 0%, #1976d2 100%);
+  --hero-text-color: #e0e0e0;
+  --footer-background-color: #1e1e1e;
+  --footer-text-color: #e0e0e0;
+  --link-color: #bbb;
+  --link-hover-color: var(--secondary-color);
+  --comment-box-background: #1e1e1e;
+  --comment-date-color: #aaa;
+  --delete-button-color: #ff6666;
+  --delete-button-hover-color: #ff4c4c;
+}
+
+/* Importation des polices locales */
 @font-face {
   font-family: "Grotesque";
-  src: url("https://s3-us-west-2.amazonaws.com/s.cdpn.io/397014/BrandonGrotesque-Regular.eot"), url("https://s3-us-west-2.amazonaws.com/s.cdpn.io/397014/BrandonGrotesque-Regular.ttf"), url("https://s3-us-west-2.amazonaws.com/s.cdpn.io/397014/BrandonGrotesque-Regular.woff");
+  src: 
+       url("/fonts/BrandonGrotesque-Regular.woff") format("woff"),
+       url("/fonts/BrandonGrotesque-Regular.ttf") format("truetype");
   font-weight: normal;
+  font-style: normal;
 }
+
 @font-face {
   font-family: "Grotesque Black";
-  src: url("https://s3-us-west-2.amazonaws.com/s.cdpn.io/397014/BrandonGrotesque-Black.eot"), url("https://s3-us-west-2.amazonaws.com/s.cdpn.io/397014/BrandonGrotesque-Black.ttf"), url("https://s3-us-west-2.amazonaws.com/s.cdpn.io/397014/BrandonGrotesque-Black.woff");
+  src: 
+       url("/fonts/BrandonGrotesque-Black.woff") format("woff"),
+       url("/fonts/BrandonGrotesque-Black.ttf") format("truetype");
   font-weight: bold;
+  font-style: normal;
 }
+
 * {
   box-sizing: border-box;
 }
@@ -27,9 +68,10 @@ body {
   background-color: var(--background-color);
   color: var(--text-color);
   overflow-x: hidden;
+  transition: background-color 0.3s, color 0.3s;
 }
 
-.text{
+.text {
   width: 98%;
   margin-left: 1%;
   margin-right: 1%;
@@ -41,17 +83,29 @@ header {
   top: 0;
   width: 100%;
   z-index: 1000;
-  background-color: #fff;
+  background-color: var(--background-color);
   display: flex;
   align-items: center;
-  justify-content: space-between; /* Ajouté pour espacer les éléments */
+  justify-content: space-between;
   padding: 15px 5%;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.3s;
 }
 
 header .logo img {
-  height: 80px; /* Ajusté depuis 50px */
+  height: 80px;
   animation: fadeInDown 1s;
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 nav {
@@ -69,7 +123,7 @@ nav ul {
 }
 
 nav ul li {
-  margin: 0; /* Supprimé margin-left car gap est utilisé */
+  margin: 0;
 }
 
 nav ul li a.nav-link {
@@ -83,7 +137,6 @@ nav ul li a.nav-link {
 nav ul li a.nav-link:hover {
   color: var(--secondary-color);
 }
-
 
 nav ul li a.nav-link::after {
   content: '';
@@ -108,7 +161,7 @@ nav button {
   padding: 10px 20px;
   font-size: 1rem;
   background-color: var(--primary-color);
-  color: white;
+  color: var(--button-text-color);
   border: none;
   border-radius: 5px;
   cursor: pointer;
@@ -116,27 +169,89 @@ nav button {
 }
 
 nav button:hover {
-  background-color: #0056b3;
+  background-color: var(--primary-color-hover);
   transform: translateY(-2px);
 }
 
 nav button.active {
-  background-color: #0056b3;
+  background-color: var(--primary-color-hover);
   transform: translateY(-2px);
 }
 
+.dark-mode-switch {
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: 30px;
+  margin-right: 10px;
+}
+
+.dark-mode-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.dark-mode-switch .slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--background-color);
+  border: 1px solid var(--text-color);
+  border-radius: 30px;
+  transition: background-color 0.4s;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 5px;
+}
+
+.dark-mode-switch .sun-icon,
+.dark-mode-switch .moon-icon {
+  font-size: 16px;
+  color: var(--text-color);
+}
+
+.dark-mode-switch .slider:before {
+  position: absolute;
+  content: "";
+  height: 26px;
+  width: 26px;
+  left: 2px;
+  bottom: 2px;
+  background-color: var(--text-color);
+  transition: transform 0.4s;
+  border-radius: 50%;
+}
+
+.dark-mode-switch input:checked + .slider:before {
+  transform: translateX(30px);
+}
+
+.dark-mode-switch input:checked + .slider .sun-icon {
+  color: var(--text-color);
+}
+
+.dark-mode-switch input:checked + .slider .moon-icon {
+  color: var(--text-color);
+}
+
 h3 .date {
-  color: black !important;
+  color: var(--text-color) !important;
 }
 
 /* Section Héro */
 .hero {
   text-align: center;
   padding: 100px 20px;
-  background: linear-gradient(135deg, #6db3f2 0%, #1e69de 100%);
-  color: #fff;
+  background: var(--hero-background);
+  color: var(--hero-text-color);
   position: relative;
   overflow: hidden;
+  transition: background 0.3s, color 0.3s;
 }
 
 .hero h1 {
@@ -155,16 +270,16 @@ h3 .date {
   padding: 15px 30px;
   font-size: 1.2rem;
   background-color: var(--secondary-color);
-  color: white;
+  color: var(--button-text-color);
   border: none;
   border-radius: 50px;
   cursor: pointer;
   transition: background-color 0.3s, transform 0.2s;
-  animation: fadeInUp 1.4s;
+  animation: fadeInUp 1.4s, floating 3s ease-in-out infinite;
 }
 
 .hero button:hover, a button:hover {
-  background-color: #218838;
+  background-color: var(--secondary-color-hover);
   transform: translateY(-3px);
 }
 
@@ -179,7 +294,7 @@ h3 .date {
   background-image: radial-gradient(white 1px, transparent 1%);
   background-size: 10px 10px;
   opacity: 0.1;
-  animation: rotateBackground 30s linear infinite;
+  animation: rotateBackground 30s linear infinite, fadeIn 2s;
 }
 
 @keyframes rotateBackground {
@@ -191,10 +306,33 @@ h3 .date {
   }
 }
 
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Animation flottante pour les boutons */
+@keyframes floating {
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
 /* Section Projets */
 #projets {
   padding: 80px 10%;
-  background-color: #fff;
+  background-color: var(--background-color);
+  transition: background-color 0.3s;
 }
 
 #projets h1,
@@ -203,6 +341,18 @@ h3 .date {
   font-size: 2.5rem;
   margin-bottom: 50px;
   color: var(--primary-color);
+  animation: slideIn 1s;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .filters {
@@ -217,7 +367,7 @@ h3 .date {
   padding: 12px 24px;
   font-size: 1rem;
   background-color: var(--primary-color);
-  color: white;
+  color: var(--button-text-color);
   border: none;
   border-radius: 30px;
   cursor: pointer;
@@ -226,22 +376,21 @@ h3 .date {
 
 .filter-button:hover,
 .filter-button.active {
-  background-color: #0056b3;
+  background-color: var(--primary-color-hover);
   transform: scale(1.05);
 }
 
-#connexion:hover{
+#connexion:hover {
   color: none;
 }
 
 #no-projects-message {
-  display: none; /* Initialement caché */
+  display: none;
   text-align: center;
   font-size: 1.2em;
   color: #666;
   margin-top: 20px;
 }
-
 
 /* Grille de projets */
 .project-grid {
@@ -254,13 +403,25 @@ h3 .date {
 .project-card {
   position: relative;
   width: 100%;
-  height: 350px; /* Hauteur totale de la carte */
+  height: 350px;
   overflow: hidden;
   border-radius: 10px;
   cursor: pointer;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
-  background-color: #fff;
+  background-color: var(--background-color);
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  animation: fadeInCard 1s;
+}
+
+@keyframes fadeInCard {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .project-card:hover {
@@ -271,7 +432,7 @@ h3 .date {
 /* Image de la carte */
 .thumb {
   width: 100%;
-  height: 80%; /* L'image occupe 80% de la carte */
+  height: 80%;
   overflow: hidden;
   transition: transform 0.5s ease;
 }
@@ -289,35 +450,35 @@ h3 .date {
   bottom: 0;
   left: 0;
   width: 100%;
-  height: 25%; /* Les infos occupent 25% de la carte */
-  color: #fff;
+  height: 25%;
+  color: var(--text-color);
   padding: 14px 24px;
   transition: height 0.5s ease;
   overflow: hidden;
-  background: #fff;
+  background: var(--background-color);
 }
 
 .infos .title {
   margin: 10px 0;
   letter-spacing: 3px;
-  color: #152536 !important;
+  color: var(--text-color) !important;
   font-family: "Grotesque Black", sans-serif;
   font-size: 1rem !important;
   text-transform: uppercase;
-  text-shadow: 0 0 0px #32577f;
 }
 
 .infos .date,
 .infos .seats {
   font-size: 0.9rem;
   margin: 5px 0;
+  color: var(--text-color);
 }
 
 .infos .txt {
   display: none;
   font-size: 0.9rem;
   margin: 10% 0;
-  color: rgba(21, 37, 54, 0.7) !important;
+  color: var(--text-color);
   border-top: 1px solid rgba(0, 0, 0, 0.2);
 }
 
@@ -328,7 +489,7 @@ h3 .date {
 }
 
 .infos a {
-  color: #fff;
+  color: var(--button-text-color);
   text-decoration: none;
   background-color: var(--secondary-color);
   padding: 10px 20px;
@@ -337,7 +498,7 @@ h3 .date {
 }
 
 .infos a:hover {
-  background-color: #218838;
+  background-color: var(--secondary-color-hover);
 }
 
 /* Effets au survol */
@@ -353,10 +514,22 @@ h3 .date {
 .project-card:hover .infos .date,
 .project-card:hover .infos .details {
   display: block;
+  animation: fadeInText 0.5s;
+}
+
+@keyframes fadeInText {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .project-card:hover .infos .date {
-  color: black;
+  color: var(--text-color);
 }
 
 .project-card:hover .infos .seats {
@@ -386,18 +559,31 @@ h3 .date {
 
 /* Styles pour les formulaires de connexion et d'enregistrement */
 form {
-  background: white;
+  background: var(--background-color);
   padding: 20px;
   margin: 20px auto;
   max-width: 400px;
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transition: background 0.3s;
+  animation: fadeInForm 1s;
+}
+
+@keyframes fadeInForm {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 form h1 {
   text-align: center;
   margin-bottom: 20px;
-  color: #333;
+  color: var(--text-color);
 }
 
 form div {
@@ -408,6 +594,7 @@ form label {
   display: block;
   margin-bottom: 5px;
   font-weight: bold;
+  color: var(--text-color);
 }
 
 form input[type="text"],
@@ -418,13 +605,15 @@ form input[type="password"] {
   border: 1px solid #ccc;
   border-radius: 4px;
   font-size: 14px;
+  background-color: var(--background-color);
+  color: var(--text-color);
 }
 
 form button[type="submit"] {
   width: 100%;
   padding: 12px;
   background-color: var(--primary-color);
-  color: white;
+  color: var(--button-text-color);
   border: none;
   border-radius: 5px;
   cursor: pointer;
@@ -433,7 +622,7 @@ form button[type="submit"] {
 }
 
 form button[type="submit"]:hover {
-  background-color: #0056b3;
+  background-color: var(--primary-color-hover);
   transform: translateY(-2px);
 }
 
@@ -449,31 +638,31 @@ form .form-footer a {
 }
 
 form .form-footer a:hover {
-  color: #0056b3;
+  color: var(--primary-color-hover);
 }
 
 .notification {
   position: fixed;
   top: 120px;
   right: 20px;
-  background-color: #f44336; /* Rouge pour les erreurs */
-  color: white;
+  background-color: #f44336;
+  color: var(--button-text-color);
   padding: 10px 20px;
   border-radius: 5px;
   display: none;
   z-index: 1000;
 }
 .notification.success {
-  background-color: #4CAF50; /* Vert pour le succès */
+  background-color: #4caf50;
 }
 
 /* Styles pour le menu déroulant */
 #dropdownMenu {
-  display: none; /* Le menu est caché par défaut */
+  display: none;
   position: absolute;
-  top: 78px; /* Ajustez la position du menu */
+  top: 78px;
   right: 0;
-  background-color: white;
+  background-color: var(--background-color);
   border: 1px solid #ddd;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   padding: 10px 0;
@@ -482,12 +671,15 @@ form .form-footer a:hover {
   border-radius: 5px;
   flex-direction: column;
   align-items: center;
+  transition: background 0.3s;
+  visibility: hidden;
 }
 
-.dropdown-menu.show {
-  display: flex !important; /* Affiche le menu */
+#dropdownMenu.show {
+  display: flex !important;
   opacity: 1;
   transform: translateY(0);
+  visibility: visible;
 }
 
 #dropdownMenu li {
@@ -498,7 +690,7 @@ form .form-footer a:hover {
 
 #dropdownMenu li a {
   text-decoration: none;
-  color: #333;
+  color: var(--text-color);
   display: block;
   width: 100%;
   padding: 10px 20px;
@@ -506,7 +698,7 @@ form .form-footer a:hover {
 
 #dropdownMenu li a:hover {
   background-color: var(--primary-color);
-  color: white;
+  color: var(--button-text-color);
 }
 
 /* Styles pour le bouton du menu déroulant */
@@ -514,8 +706,8 @@ form .form-footer a:hover {
   cursor: pointer;
   padding: 10px 20px;
   font-size: 1rem;
-  background-color: #f8f8f8;
-  color: #333;
+  background-color: var(--background-color);
+  color: var(--text-color);
   border: 1px solid #ccc;
   border-radius: 5px;
   transition: background-color 0.3s;
@@ -523,7 +715,7 @@ form .form-footer a:hover {
 
 #usernameDropdown:hover {
   background-color: var(--primary-color);
-  color: white;
+  color: var(--button-text-color);
 }
 
 /* CSS pour les commentaires */
@@ -533,15 +725,29 @@ form .form-footer a:hover {
 }
 
 .comment {
-  background-color: #f9f9f9;
+  background-color: var(--background-color);
   border-radius: 8px;
   padding: 15px;
   margin-bottom: 15px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  transition: background 0.3s, color 0.3s;
+  animation: fadeInComment 1s;
+}
+
+@keyframes fadeInComment {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .comment h3 {
   margin-bottom: 15px;
+  color: var(--text-color);
 }
 
 .comment form {
@@ -554,66 +760,74 @@ form .form-footer a:hover {
   margin-bottom: 10px;
   border: 1px solid #ccc;
   border-radius: 5px;
+  background-color: var(--background-color);
+  color: var(--text-color);
 }
 
 .comment button {
   align-self: flex-start;
   padding: 10px 20px;
-  background-color: #f9f9f9;
+  background-color: var(--primary-color);
+  color: var(--button-text-color);
   border: none;
+  border-radius: 5px;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: background-color 0.3s, transform 0.2s;
 }
 
 .comment button:hover {
-  background-color: #eef2f7;
+  background-color: var(--primary-color-hover);
+  transform: translateY(-2px);
 }
 
 .comment-header {
   display: flex;
   justify-content: space-between;
   font-weight: bold;
+  color: var(--text-color);
 }
 
 .comment-username {
-  color: #0056b3;
+  color: var(--primary-color);
 }
 
 .comment-date {
   font-size: 0.9em;
-  color: #888;
+  color: var(--comment-date-color);
 }
 
 .comment-body {
   font-size: 1em;
-  color: #333;
+  color: var(--text-color);
 }
 
 .comment-box {
-  background-color: #eef2f7;
+  background-color: var(--comment-box-background);
   padding: 10px;
   border-radius: 8px;
   margin-top: 10px;
+  color: var(--text-color);
 }
 
 .delete-button {
   background: none;
   border: none;
-  color: red;
+  color: var(--delete-button-color);
   cursor: pointer;
   position: absolute;
   bottom: 5px;
   right: 5px;
   font-size: 1.1em;
+  transition: color 0.3s;
 }
 
 .delete-button:hover {
-  opacity: 0.8;
+  color: var(--delete-button-hover-color);
 }
 
 .delete-button2 {
-  background-color: red;
-  color: white;
+  background-color: var(--delete-button-color);
+  color: var(--button-text-color);
   border: none;
   padding: 10px 15px;
   cursor: pointer;
@@ -622,20 +836,21 @@ form .form-footer a:hover {
   align-items: center;
   border-radius: 5px;
   margin-top: 3%;
+  transition: background-color 0.3s;
 }
 
 .delete-button2:hover {
-  background-color: darkred;
+  background-color: var(--delete-button-hover-color);
 }
 
 .delete-button2 i.fa-trash {
-  color: white;
+  color: var(--button-text-color);
   margin-right: 5px;
 }
 
 .edit-button {
-  background-color: #28a745; /* Couleur verte */
-  color: white;
+  background-color: var(--secondary-color);
+  color: var(--button-text-color);
   border: none;
   padding: 10px 15px;
   cursor: pointer;
@@ -643,31 +858,85 @@ form .form-footer a:hover {
   display: inline-flex;
   align-items: center;
   border-radius: 5px;
-  text-decoration: none; /* Pour les liens */
+  text-decoration: none;
   margin-right: 10px;
+  transition: background-color 0.3s;
 }
 
 .edit-button:hover {
-  background-color: #218838;
+  background-color: var(--secondary-color-hover);
 }
 
 .edit-button i.fa-edit {
   margin-right: 5px;
 }
 
-
-
 .comment {
-  position: relative; /* Nécessaire pour que le bouton soit positionné absolument par rapport au commentaire */
+  position: relative;
+}
+
+/* Styles pour les boutons de réaction */
+.reactions {
+  margin-top: 10px;
+}
+
+.reaction-button {
+  background-color: transparent;
+  border: none;
+  color: var(--text-color);
+  cursor: pointer;
+  font-size: 1em;
+  display: inline-flex;
+  align-items: center;
+  transition: color 0.3s, background-color 0.3s;
+  padding: 5px 10px;
+  border-radius: 5px;
+}
+
+.reaction-button .reaction-count {
+  margin-left: 5px;
+  font-size: 0.9em;
+  color: var(--text-color);
+}
+
+.reaction-button:hover {
+  background-color: var(--primary-color);
+  color: var(--button-text-color);
+}
+
+.reaction-button:hover .reaction-count {
+  color: var(--button-text-color);
+}
+
+.reaction-button.reacted {
+  background-color: var(--secondary-color);
+  color: var(--button-text-color);
+}
+
+.reaction-button.reacted .reaction-count {
+  color: var(--button-text-color);
 }
 
 /* Styles pour la page de détail du projet */
 .project-detail {
   padding: 40px 10%;
-  background-color: white;
+  background-color: var(--background-color);
   display: flex;
   flex-direction: column;
   align-items: center;
+  transition: background 0.3s;
+  animation: fadeInDetail 1s;
+}
+
+@keyframes fadeInDetail {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .project-detail img {
@@ -681,6 +950,7 @@ form .form-footer a:hover {
   font-size: 2rem;
   margin-bottom: 10px;
   text-align: center;
+  color: var(--text-color);
 }
 
 .project-detail p {
@@ -688,6 +958,7 @@ form .form-footer a:hover {
   line-height: 1.6;
   margin-bottom: 10px;
   text-align: center;
+  color: var(--text-color);
 }
 
 .project-detail a {
@@ -695,14 +966,14 @@ form .form-footer a:hover {
   margin-top: 20px;
   padding: 10px 20px;
   background-color: var(--primary-color);
-  color: white;
+  color: var(--button-text-color);
   text-decoration: none;
   border-radius: 5px;
   transition: background-color 0.3s;
 }
 
 .project-detail a:hover {
-  background-color: #0056b3;
+  background-color: var(--primary-color-hover);
 }
 
 /* Footer Styles */
@@ -711,14 +982,31 @@ form .form-footer a:hover {
   width: 100%;
   text-align: left;
   font: bold 16px sans-serif;
-  color: #333;
-  background-image: url("/images/ft_bg.png");
-  background-position: center top;
+  color: var(--footer-text-color);
+  background-color: var(--footer-background-color);
   padding-top: 200px;
+  position: relative;
+  transition: background 0.3s, color 0.3s;
+  background-image: url('/images/ft_bg.png');
   background-size: cover;
   background-repeat: no-repeat;
-  position: relative;
-  background-color: white;
+  background-position: center top;
+  animation: fadeInFooter 1s;
+}
+
+@keyframes fadeInFooter {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+body.dark-mode .footer {
+  background-image: none; /* Optionnel : retirer l'image en mode sombre */
 }
 
 .footer-container {
@@ -736,7 +1024,7 @@ form .form-footer a:hover {
 .footer-section h4 {
   font-size: 18px;
   margin-bottom: 15px;
-  color: #333;
+  color: var(--footer-text-color);
   position: relative;
 }
 
@@ -761,12 +1049,12 @@ form .form-footer a:hover {
 
 .footer-section ul li a {
   text-decoration: none;
-  color: #555;
+  color: var(--link-color);
   transition: color 0.3s;
 }
 
 .footer-section ul li a:hover {
-  color: var(--secondary-color);
+  color: var(--link-hover-color);
 }
 
 .footer-logo-img {
@@ -777,13 +1065,13 @@ form .form-footer a:hover {
 
 .footer-description {
   font-size: 14px;
-  color: #555;
+  color: var(--footer-text-color);
   margin-bottom: 20px;
 }
 
 .footer-socials a {
   display: inline-block;
-  color: #555;
+  color: var(--link-color);
   text-decoration: none;
   margin-right: 15px;
   font-size: 24px;
@@ -791,7 +1079,7 @@ form .form-footer a:hover {
 }
 
 .footer-socials a:hover {
-  color: var(--secondary-color);
+  color: var(--link-hover-color);
   transform: scale(1.1);
 }
 
@@ -805,72 +1093,47 @@ form .form-footer a:hover {
 
 .bottom-footer p {
   margin: 5px 0;
-  color: #555;
+  color: var(--footer-text-color);
   font-size: 14px;
 }
 
 .legal-links a {
-  color: #555;
+  color: var(--link-color);
   text-decoration: none;
   margin: 0 10px;
   transition: color 0.3s;
 }
 
 .legal-links a:hover {
-  color: var(--secondary-color);
+  color: var(--link-hover-color);
 }
 
 /* Responsivité */
-@media (max-width: 1024px) {
-  header {
-    padding: 15px 5%;
-  }
-}
-
 @media (max-width: 768px) {
-  header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  nav ul {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
-    margin-top: 10px;
-  }
-
-  nav ul li {
-    margin-left: 0;
-    margin-bottom: 10px;
+  header .logo img {
+    height: 60px;
   }
 
   .hero h1 {
-    font-size: 2rem;
+    font-size: 2.5rem;
   }
 
   .hero p {
-    font-size: 1rem;
-  }
-
-  .hero button {
-    width: 100%;
-    text-align: center;
+    font-size: 1.2rem;
   }
 
   .filters {
     flex-direction: column;
-    gap: 10px;
+    align-items: center;
   }
 
-  .project-detail {
-    padding: 20px 5%;
+  .project-card {
+    height: 300px;
   }
 
   .footer-container {
     flex-direction: column;
     align-items: center;
-    padding: 40px 5%;
   }
 
   .footer-section {
@@ -879,93 +1142,24 @@ form .form-footer a:hover {
   }
 }
 
-@media (max-width: 600px) {
-  .comment {
-    padding: 10px;
-    margin-bottom: 15px;
-  }
-
-  .comment-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .comment-username {
-    font-size: 1.2em;
-  }
-
-  .comment-date {
-    font-size: 0.8em;
-  }
+/* Margin adjustments */
+#loginForm,
+#registerForm,
+#contact,
+#about,
+.project-detail,
+#titleCreate,
+#h1nosprojets {
+  margin-top: 10%;
 }
 
-@media (max-width: 480px) {
-  .hero h1 {
-    font-size: 2rem;
-  }
-
-  .hero p {
-    font-size: 1rem;
-  }
-
-  .filter-button {
-    padding: 8px 16px;
-    font-size: 0.9rem;
-  }
-
-  .infos .title {
-    font-size: 1rem;
-  }
-
-  .infos .txt {
-    font-size: 0.8rem;
-  }
-
-  .infos a {
-    padding: 8px 16px;
-    font-size: 0.9rem;
-  }
-
-  .project-detail h1 {
-    font-size: 1.5rem;
-  }
-
-  .project-detail p {
-    font-size: 1rem;
-  }
-}
-
-/* Animations */
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes fadeInDown {
-  from {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-#loginForm, #registerForm, #contact, #about, .project-detail, #titleCreate, #h1nosprojets  {
-  margin-top: 10%; 
-}
-
-#h1nosprojets, #termsofservice, #privacypolicy, #profiletitle{
+#h1nosprojets,
+#termsofservice,
+#privacypolicy,
+#profiletitle {
   margin-top: 6%;
 }
 
-#titleCreate{
+#titleCreate {
   text-align: center;
 }

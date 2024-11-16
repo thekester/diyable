@@ -59,12 +59,12 @@ block content
               - const reactionsList = ['👍', '💩', '❤️', '😂']
               each emoji in reactionsList
                 - const count = comment.reactions && comment.reactions[emoji] ? comment.reactions[emoji] : 0
-                button(
+                button.reaction-button(
                   type="button"
-                  class="reaction-button"
                   data-comment-id=comment.id
                   data-emoji=emoji
-                ) #{emoji}
+                )
+                  | #{emoji}
                   span.reaction-count #{count}
       else
         p Aucun commentaire pour le moment.
