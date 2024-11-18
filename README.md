@@ -45,12 +45,14 @@ ADMIN_EMAIL=<Your_ADMIN_EMAIL>
 if you don't create the .env you got a warning like that: Les informations de l'admin ne sont pas entièrement définies dans les variables d'environnement.
 And you can't have access to the admin account because the script use the .env to create the admin account.
 
-
-## Simple Method to Start the Application
 To avoid the error of Error: secret option required for sessions you need to run the following command
 ```sh
    echo "SESSION_SECRET=$(openssl rand -hex 64)" >> .env
 ```
+You can run this command only once and keep your session secret in the .env file.
+
+
+## Start the Application
 
 1. **Run Node Application Directly**:
 ```sh
@@ -105,26 +107,20 @@ To avoid the error of Error: secret option required for sessions you need to run
 - **Moderator Role**: Special users act as moderators who validate tutorials and highlight the most innovative or helpful projects.
 - **Featured Projects**: Moderators can feature exceptional projects to give them more visibility.
 
+### Guest Access
+- **View-Only Mode**: Non-registered users can browse all tutorials, but they cannot leave comments or interact with creators.
+
 ### Comment Section
 - **Interactive Discussions**: Users can leave comments to ask questions, provide suggestions, or offer improvements for each project.
 - **Community Collaboration**: Encourage collaboration by allowing users to share their insights directly in the tutorial discussions.
 
-### Customizable Themes
+### Customizable Themes (Dark mode)
 - **Personalized Layouts**: Users can choose their preferred layout style to make reading and following the instructions easier and more enjoyable.
-
-### Guest Access
-- **View-Only Mode**: Non-registered users can browse all tutorials, but they cannot leave comments or interact with creators.
 
 ### Tutorial Filtering System
 - **Search and Filter by**:
   - **Material Type**: Find projects using specific materials like wood, electronics, or textiles.
   - **Category**: Filter projects by category such as *Home Decor*, *Electronics*, or *Gardening*.
-
-### Rating System
-- **Multi-Criteria Rating**:
-  - **Star Ratings**: Rate projects from 1 to 5 stars based on their usefulness or creativity.
-  - **Emoji Reactions**: Express your feelings with emoji-based reactions.
-  - **Sorting Options**: Sort tutorials by criteria like *Most Relevant*, *Highest Rated*, or *Most Recent*.
 
 ## Getting Started
 1. **Sign Up**: Create an account to share your projects, comment on others, and join the community.
