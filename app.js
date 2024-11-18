@@ -383,16 +383,26 @@ const insertInitialProjectsData = (adminUserId) => {
     console.log(`Doublons supprimés. ${this.changes} enregistrements affectés.`);
 
     const projects = [
-      // Ajoutez vos projets initiaux ici
-      // Par exemple :
-      // {
-      //   date: new Date().toISOString(),
-      //   name: 'Mon Premier Projet',
-      //   description: 'Description du projet',
-      //   category: 'Technologie',
-      //   image: 'uploads/mon_image.jpg',
-      //   userId: adminUserId,
-      // },
+      { date: '2024-11-07', name: 'Projet IoT Innovant', description: 'Découvrez comment ce projet IoT peut transformer votre quotidien.', category: 'tech', image: 'images/projet-iot-exemple.jpg' },
+      { date: '2024-11-06', name: 'Atelier de Bricolage', description: 'Un projet de bricolage pour embellir votre espace de vie.', category: 'craft', image: 'images/atelier-bricolage.jpg' },
+      { date: '2024-11-03', name: 'Création d\'un Jardin Vertical', description: 'Fabriquez un jardin vertical pour votre balcon ou intérieur.', category: 'garden', image: 'images/jardin-vertical.jpg' },
+      { date: '2024-11-01', name: 'Fabriquer sa Propre Table en Bois', description: 'Construisez une table en bois personnalisée pour votre maison.', category: 'woodwork', image: 'images/table-bois.jpg' },
+      { date: '2024-10-29', name: 'Réaliser des Bougies Maison', description: 'Apprenez à créer des bougies naturelles avec vos propres parfums.', category: 'craft', image: 'images/bougies-maison.jpg' },
+      { date: '2024-10-26', name: 'Robot Suiveur de Ligne', description: 'Assemblez un petit robot qui suit une ligne tracée au sol.', category: 'tech', image: 'images/robot-ligne.jpg' },
+      { date: '2024-10-23', name: 'Peinture sur Tissu', description: 'Personnalisez vos vêtements avec des motifs peints à la main.', category: 'art', image: 'images/peinture-tissu.jpg' },
+      { date: '2024-10-15', name: 'Lampe en Bouteille Recyclée', description: 'Transformez une bouteille en une lampe élégante.', category: 'recycle', image: 'images/lampe-bouteille.jpg' },
+      { date: '2024-10-11', name: 'Étagère Murale DIY', description: 'Créez une étagère murale design avec des matériaux simples.', category: 'woodwork', image: 'images/etagere-murale.jpg' },
+      { date: '2024-10-08', name: 'Fabriquer un Cerf-Volant', description: 'Construisez un cerf-volant pour profiter des journées venteuses.', category: 'craft', image: 'images/cerf-volant.jpg' },
+      { date: '2024-10-04', name: 'Enceinte Bluetooth Maison', description: 'Assemblez votre propre enceinte Bluetooth portable.', category: 'tech', image: 'images/enceinte-bluetooth.jpg' },
+      { date: '2024-10-01', name: 'Pots de Fleurs Peints', description: 'Donnez de la couleur à vos plantes avec des pots personnalisés.', category: 'art', image: 'images/pots-fleurs-peints.jpg' },
+      { date: '2024-09-28', name: 'Horloge Murale en Vinyle', description: 'Recyclez de vieux disques vinyles en horloges murales.', category: 'recycle', image: 'images/horloge-vinyle.jpg' },
+      { date: '2024-09-25', name: 'Fabriquer du Savon Naturel', description: 'Créez vos propres savons avec des ingrédients naturels.', category: 'craft', image: 'images/savon-naturel.jpg' },
+      { date: '2024-09-21', name: 'Station Météo Connectée', description: 'Construisez une station météo avec un microcontrôleur.', category: 'tech', image: 'images/station-meteo.jpg' },
+      { date: '2024-09-17', name: 'Décoration en Macramé', description: 'Apprenez l\'art du macramé pour décorer votre intérieur.', category: 'craft', image: 'images/macrame.jpg' },
+      { date: '2024-09-14', name: 'Composteur de Jardin', description: 'Fabriquez un composteur pour recycler vos déchets organiques.', category: 'garden', image: 'images/composteur.jpg' },
+      { date: '2024-09-11', name: 'Cadre Photo en Bois Recyclé', description: 'Créez des cadres photo uniques avec du bois récupéré.', category: 'recycle', image: 'images/cadre-photo.jpg' },
+      { date: '2024-09-08', name: 'Coussins Personnalisés', description: 'Cousez des coussins avec des motifs et tissus de votre choix.', category: 'craft', image: 'images/coussins.jpg' },
+      { date: '2024-09-03', name: 'Système d\'Arrosage Automatique', description: 'Installez un système pour arroser vos plantes automatiquement.', category: 'tech', image: 'images/arrosage-automatique.jpg' },
     ];
 
     const insertQuery = `
