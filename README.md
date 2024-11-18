@@ -45,6 +45,25 @@ ADMIN_EMAIL=<Your_ADMIN_EMAIL>
 if you don't create the .env you got a warning like that: Les informations de l'admin ne sont pas entièrement définies dans les variables d'environnement.
 And you can't have access to the admin account because the script use the .env to create the admin account.
 
+
+## Simple Method to Start the Application
+To avoid the error of Error: secret option required for sessions you need to run the following command
+```sh
+   echo "SESSION_SECRET=$(openssl rand -hex 64)" >> .env
+```
+
+1. **Run Node Application Directly**:
+```sh
+   node app.js
+```
+
+## Schéma de la Base de Données
+
+![database graphs](assets/images/diyable-dbv2.png)
+
+> This graph was made using [ChartDB](https://chartdb.io/).
+
+
 ## Docker Configuration
 
 1. **Build Docker Image**:
@@ -74,23 +93,6 @@ And you can't have access to the admin account because the script use the .env t
 ```sh
    docker-compose logs -f
 ```
-
-## Simple Method to Start the Application
-To avoid the error of Error: secret option required for sessions you need to run the following command
-```sh
-   echo "SESSION_SECRET=$(openssl rand -hex 64)" >> .env
-```
-
-1. **Run Node Application Directly**:
-```sh
-   node app.js
-```
-
-## Schéma de la Base de Données
-
-![database graphs](assets/images/diyable-dbv2.png)
-
-> This graph was made using [ChartDB](https://chartdb.io/).
 
 
 ## Features
