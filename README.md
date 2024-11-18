@@ -1,7 +1,8 @@
 # DIY Project Sharing Platform
 
-## Demo
-https://www.youtube.com/watch?v=9aLlv0VMlj4
+## Demo Video 🎥
+Check out our platform in action:  
+[![Watch the Demo](https://img.youtube.com/vi/6Qq0NH7cFGM/0.jpg)](https://www.youtube.com/watch?v=6Qq0NH7cFGM)
 
 ## Overview
 
@@ -66,7 +67,8 @@ You can run this command only once and keep your session secret in the .env file
 ![database graphs](assets/images/diyable-dbv2.png)
 
 > This graph was made using [ChartDB](https://chartdb.io/).
-
+Here is the structure of the database:
+![BDD export in JSON](bddexportasjson.json)
 
 ## Docker Configuration
 
