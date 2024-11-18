@@ -1,5 +1,3 @@
-// app.js
-
 require('dotenv').config(); // Charger les variables d'environnement depuis .env
 
 const express = require('express');
@@ -33,7 +31,6 @@ app.use('/images', express.static(path.join(__dirname, 'assets', 'images'))); //
 app.use('/learn', express.static(path.join(__dirname, 'views', 'learn'))); // Servir les images
 app.use('/shop', express.static(path.join(__dirname, 'views', 'shop'))); // Servir les images
 
-
 // Configuration du moteur de template (Pug)
 app.set('view engine', 'pug');
 app.set('views', './views');
@@ -53,7 +50,6 @@ const csrfProtection = csrf({
     return req.headers['x-csrf-token'] || req.body._csrf || req.query._csrf;
   },
 });
-
 
 // Fonction pour appliquer le middleware CSRF et ajouter le jeton CSRF aux variables locales
 function csrfMiddleware(req, res, next) {
@@ -76,7 +72,11 @@ app.use(function (err, req, res, next) {
     'Votre session a expiré ou est invalide. Veuillez recharger la page et réessayer.';
 
   // Vérifier si la requête est vers une route API
-  if (req.path.startsWith('/comments') || req.path.startsWith('/react') || req.path.startsWith('/projets')) {
+  if (
+    req.path.startsWith('/comments') ||
+    req.path.startsWith('/react') ||
+    req.path.startsWith('/projets')
+  ) {
     res.status(403).json({
       success: false,
       message: errorMessage,
@@ -88,7 +88,6 @@ app.use(function (err, req, res, next) {
     });
   }
 });
-
 
 // Configuration de multer pour les téléchargements de fichiers
 const storage = multer.diskStorage({
@@ -308,8 +307,7 @@ const checkAndInsertInitialData = (adminUserId) => {
       return;
     }
 
-    const hasUniqueConstraint =
-      indexes && indexes.some((index) => index.origin === 'u' || index.unique === 1);
+    const hasUniqueConstraint = indexes && indexes.some((index) => index.origin === 'u' || index.unique === 1);
 
     if (!hasUniqueConstraint) {
       // Recréer la table avec la contrainte UNIQUE
@@ -386,26 +384,146 @@ const insertInitialProjectsData = (adminUserId) => {
     console.log(`Doublons supprimés. ${this.changes} enregistrements affectés.`);
 
     const projects = [
-      { date: '2024-11-07', name: 'Projet IoT Innovant', description: 'Découvrez comment ce projet IoT peut transformer votre quotidien.', category: 'tech', image: 'images/projet-iot-exemple.jpg' },
-      { date: '2024-11-06', name: 'Atelier de Bricolage', description: 'Un projet de bricolage pour embellir votre espace de vie.', category: 'craft', image: 'images/atelier-bricolage.jpg' },
-      { date: '2024-11-03', name: 'Création d\'un Jardin Vertical', description: 'Fabriquez un jardin vertical pour votre balcon ou intérieur.', category: 'garden', image: 'images/jardin-vertical.jpg' },
-      { date: '2024-11-01', name: 'Fabriquer sa Propre Table en Bois', description: 'Construisez une table en bois personnalisée pour votre maison.', category: 'woodwork', image: 'images/table-bois.jpg' },
-      { date: '2024-10-29', name: 'Réaliser des Bougies Maison', description: 'Apprenez à créer des bougies naturelles avec vos propres parfums.', category: 'craft', image: 'images/bougies-maison.jpg' },
-      { date: '2024-10-26', name: 'Robot Suiveur de Ligne', description: 'Assemblez un petit robot qui suit une ligne tracée au sol.', category: 'tech', image: 'images/robot-ligne.jpg' },
-      { date: '2024-10-23', name: 'Peinture sur Tissu', description: 'Personnalisez vos vêtements avec des motifs peints à la main.', category: 'art', image: 'images/peinture-tissu.jpg' },
-      { date: '2024-10-15', name: 'Lampe en Bouteille Recyclée', description: 'Transformez une bouteille en une lampe élégante.', category: 'recycle', image: 'images/lampe-bouteille.jpg' },
-      { date: '2024-10-11', name: 'Étagère Murale DIY', description: 'Créez une étagère murale design avec des matériaux simples.', category: 'woodwork', image: 'images/etagere-murale.jpg' },
-      { date: '2024-10-08', name: 'Fabriquer un Cerf-Volant', description: 'Construisez un cerf-volant pour profiter des journées venteuses.', category: 'craft', image: 'images/cerf-volant.jpg' },
-      { date: '2024-10-04', name: 'Enceinte Bluetooth Maison', description: 'Assemblez votre propre enceinte Bluetooth portable.', category: 'tech', image: 'images/enceinte-bluetooth.jpg' },
-      { date: '2024-10-01', name: 'Pots de Fleurs Peints', description: 'Donnez de la couleur à vos plantes avec des pots personnalisés.', category: 'art', image: 'images/pots-fleurs-peints.jpg' },
-      { date: '2024-09-28', name: 'Horloge Murale en Vinyle', description: 'Recyclez de vieux disques vinyles en horloges murales.', category: 'recycle', image: 'images/horloge-vinyle.jpg' },
-      { date: '2024-09-25', name: 'Fabriquer du Savon Naturel', description: 'Créez vos propres savons avec des ingrédients naturels.', category: 'craft', image: 'images/savon-naturel.jpg' },
-      { date: '2024-09-21', name: 'Station Météo Connectée', description: 'Construisez une station météo avec un microcontrôleur.', category: 'tech', image: 'images/station-meteo.jpg' },
-      { date: '2024-09-17', name: 'Décoration en Macramé', description: 'Apprenez l\'art du macramé pour décorer votre intérieur.', category: 'craft', image: 'images/macrame.jpg' },
-      { date: '2024-09-14', name: 'Composteur de Jardin', description: 'Fabriquez un composteur pour recycler vos déchets organiques.', category: 'garden', image: 'images/composteur.jpg' },
-      { date: '2024-09-11', name: 'Cadre Photo en Bois Recyclé', description: 'Créez des cadres photo uniques avec du bois récupéré.', category: 'recycle', image: 'images/cadre-photo.jpg' },
-      { date: '2024-09-08', name: 'Coussins Personnalisés', description: 'Cousez des coussins avec des motifs et tissus de votre choix.', category: 'craft', image: 'images/coussins.jpg' },
-      { date: '2024-09-03', name: 'Système d\'Arrosage Automatique', description: 'Installez un système pour arroser vos plantes automatiquement.', category: 'tech', image: 'images/arrosage-automatique.jpg' },
+      {
+        date: '2024-11-07',
+        name: 'Projet IoT Innovant',
+        description: 'Découvrez comment ce projet IoT peut transformer votre quotidien.',
+        category: 'tech',
+        image: 'images/projet-iot-exemple.jpg',
+      },
+      {
+        date: '2024-11-06',
+        name: 'Atelier de Bricolage',
+        description: 'Un projet de bricolage pour embellir votre espace de vie.',
+        category: 'craft',
+        image: 'images/atelier-bricolage.jpg',
+      },
+      {
+        date: '2024-11-03',
+        name: "Création d'un Jardin Vertical",
+        description: 'Fabriquez un jardin vertical pour votre balcon ou intérieur.',
+        category: 'garden',
+        image: 'images/jardin-vertical.jpg',
+      },
+      {
+        date: '2024-11-01',
+        name: 'Fabriquer sa Propre Table en Bois',
+        description: 'Construisez une table en bois personnalisée pour votre maison.',
+        category: 'woodwork',
+        image: 'images/table-bois.jpg',
+      },
+      {
+        date: '2024-10-29',
+        name: 'Réaliser des Bougies Maison',
+        description: 'Apprenez à créer des bougies naturelles avec vos propres parfums.',
+        category: 'craft',
+        image: 'images/bougies-maison.jpg',
+      },
+      {
+        date: '2024-10-26',
+        name: 'Robot Suiveur de Ligne',
+        description: 'Assemblez un petit robot qui suit une ligne tracée au sol.',
+        category: 'tech',
+        image: 'images/robot-ligne.jpg',
+      },
+      {
+        date: '2024-10-23',
+        name: 'Peinture sur Tissu',
+        description: 'Personnalisez vos vêtements avec des motifs peints à la main.',
+        category: 'art',
+        image: 'images/peinture-tissu.jpg',
+      },
+      {
+        date: '2024-10-15',
+        name: 'Lampe en Bouteille Recyclée',
+        description: 'Transformez une bouteille en une lampe élégante.',
+        category: 'recycle',
+        image: 'images/lampe-bouteille.jpg',
+      },
+      {
+        date: '2024-10-11',
+        name: 'Étagère Murale DIY',
+        description: 'Créez une étagère murale design avec des matériaux simples.',
+        category: 'woodwork',
+        image: 'images/etagere-murale.jpg',
+      },
+      {
+        date: '2024-10-08',
+        name: 'Fabriquer un Cerf-Volant',
+        description: 'Construisez un cerf-volant pour profiter des journées venteuses.',
+        category: 'craft',
+        image: 'images/cerf-volant.jpg',
+      },
+      {
+        date: '2024-10-04',
+        name: 'Enceinte Bluetooth Maison',
+        description: 'Assemblez votre propre enceinte Bluetooth portable.',
+        category: 'tech',
+        image: 'images/enceinte-bluetooth.jpg',
+      },
+      {
+        date: '2024-10-01',
+        name: 'Pots de Fleurs Peints',
+        description: 'Donnez de la couleur à vos plantes avec des pots personnalisés.',
+        category: 'art',
+        image: 'images/pots-fleurs-peints.jpg',
+      },
+      {
+        date: '2024-09-28',
+        name: 'Horloge Murale en Vinyle',
+        description: 'Recyclez de vieux disques vinyles en horloges murales.',
+        category: 'recycle',
+        image: 'images/horloge-vinyle.jpg',
+      },
+      {
+        date: '2024-09-25',
+        name: 'Fabriquer du Savon Naturel',
+        description: 'Créez vos propres savons avec des ingrédients naturels.',
+        category: 'craft',
+        image: 'images/savon-naturel.jpg',
+      },
+      {
+        date: '2024-09-21',
+        name: 'Station Météo Connectée',
+        description: 'Construisez une station météo avec un microcontrôleur.',
+        category: 'tech',
+        image: 'images/station-meteo.jpg',
+      },
+      {
+        date: '2024-09-17',
+        name: 'Décoration en Macramé',
+        description: "Apprenez l'art du macramé pour décorer votre intérieur.",
+        category: 'craft',
+        image: 'images/macrame.jpg',
+      },
+      {
+        date: '2024-09-14',
+        name: 'Composteur de Jardin',
+        description: 'Fabriquez un composteur pour recycler vos déchets organiques.',
+        category: 'garden',
+        image: 'images/composteur.jpg',
+      },
+      {
+        date: '2024-09-11',
+        name: 'Cadre Photo en Bois Recyclé',
+        description: 'Créez des cadres photo uniques avec du bois récupéré.',
+        category: 'recycle',
+        image: 'images/cadre-photo.jpg',
+      },
+      {
+        date: '2024-09-08',
+        name: 'Coussins Personnalisés',
+        description: 'Cousez des coussins avec des motifs et tissus de votre choix.',
+        category: 'craft',
+        image: 'images/coussins.jpg',
+      },
+      {
+        date: '2024-09-03',
+        name: "Système d'Arrosage Automatique",
+        description: 'Installez un système pour arroser vos plantes automatiquement.',
+        category: 'tech',
+        image: 'images/arrosage-automatique.jpg',
+      },
     ];
 
     const insertQuery = `
@@ -422,10 +540,20 @@ const insertInitialProjectsData = (adminUserId) => {
 
       projects.forEach((project) => {
         stmt.run(
-          [project.date, project.name, project.description, project.category, project.image, adminUserId],
+          [
+            project.date,
+            project.name,
+            project.description,
+            project.category,
+            project.image,
+            adminUserId,
+          ],
           function (err) {
             if (err) {
-              console.error("Erreur lors de l'insertion ou la mise à jour du projet:", err.message);
+              console.error(
+                "Erreur lors de l'insertion ou la mise à jour du projet:",
+                err.message
+              );
             }
           }
         );
@@ -457,7 +585,9 @@ const createAdminUser = (callback) => {
   const adminEmail = process.env.ADMIN_EMAIL;
 
   if (!adminUsername || !adminPassword || !adminEmail) {
-    console.warn("Les informations de l'admin ne sont pas entièrement définies dans les variables d'environnement.");
+    console.warn(
+      "Les informations de l'admin ne sont pas entièrement définies dans les variables d'environnement."
+    );
     return callback(new Error("Informations d'admin manquantes"));
   }
 
@@ -498,13 +628,12 @@ function isAuthenticated(req, res, next) {
   } else {
     // Vérifier si la requête est une requête AJAX
     if (req.headers['x-requested-with'] === 'XMLHttpRequest' || req.xhr) {
-      res.status(401).json({ success: false, message: 'Vous n\'êtes pas connecté.' });
+      res.status(401).json({ success: false, message: "Vous n'êtes pas connecté." });
     } else {
       res.redirect('/login');
     }
   }
 }
-
 
 // Middleware pour valider les entrées utilisateur
 const validateProject = [
@@ -568,7 +697,7 @@ app.get('/legal-info', csrfMiddleware, (req, res) => {
 
 // Route pour la politique d'accessibilité
 app.get('/accessibility-policy', csrfMiddleware, (req, res) => {
-  res.render('accessibility-policy', { title: 'Politique d\'accessibilité' });
+  res.render('accessibility-policy', { title: "Politique d'accessibilité" });
 });
 
 // Route pour la politique de remboursement
@@ -586,24 +715,24 @@ app.get('/learn/blog', csrfMiddleware, (req, res) => {
   res.render('learn/blog', { title: 'Blog' });
 });
 
-// Route pour la faq
+// Route pour la FAQ
 app.get('/learn/faq', csrfMiddleware, (req, res) => {
-  res.render('learn/faq', { title: 'Faq' });
+  res.render('learn/faq', { title: 'FAQ' });
 });
 
-// Route pour our-story
+// Route pour "Our Story"
 app.get('/learn/our-story', csrfMiddleware, (req, res) => {
-  res.render('learn/our-story', { title: 'Our story' });
+  res.render('learn/our-story', { title: 'Notre Histoire' });
 });
 
-// Route pour les tips tricks
+// Route pour les astuces et conseils
 app.get('/learn/tips-tricks', csrfMiddleware, (req, res) => {
-  res.render('learn/tips-tricks', { title: 'Tips-tricks' });
+  res.render('learn/tips-tricks', { title: 'Astuces & Conseils' });
 });
 
-// Route pour les tutorials
+// Route pour les tutoriels
 app.get('/learn/tutorials', csrfMiddleware, (req, res) => {
-  res.render('learn/tutorials', { title: 'tutorials' });
+  res.render('learn/tutorials', { title: 'Tutoriels' });
 });
 
 // Route pour la page principale de la boutique
@@ -626,16 +755,15 @@ app.get('/shop/all', csrfMiddleware, (req, res) => {
   res.render('shop/all', { title: 'Tout le Magasin' });
 });
 
-// Route pour les starters kits
+// Route pour les kits de démarrage
 app.get('/shop/starter-kits', csrfMiddleware, (req, res) => {
-  res.render('shop/starter-kits', { title: 'Starter-kits' });
+  res.render('shop/starter-kits', { title: 'Kits de Démarrage' });
 });
 
 // Route pour les projets DIY
 app.get('/shop/projects', csrfMiddleware, (req, res) => {
   res.render('shop/projects', { title: 'Projets DIY' });
 });
-
 
 // Route pour les projets
 app.get('/projets', csrfMiddleware, (req, res) => {
@@ -708,14 +836,18 @@ app.post(
       VALUES (?, ?, ?, ?, ?, ?)
     `;
 
-    db.run(insertProjectQuery, [date, name, description, category, image, userId], function (err) {
-      if (err) {
-        console.error("Erreur lors de l'insertion du projet:", err.message);
-        return res.status(500).send("Erreur lors de l'ajout du projet.");
-      } else {
-        res.redirect(`/projets/${this.lastID}`);
+    db.run(
+      insertProjectQuery,
+      [date, name, description, category, image, userId],
+      function (err) {
+        if (err) {
+          console.error("Erreur lors de l'insertion du projet:", err.message);
+          return res.status(500).send("Erreur lors de l'ajout du projet.");
+        } else {
+          res.redirect(`/projets/${this.lastID}`);
+        }
       }
-    });
+    );
   }
 );
 
@@ -925,14 +1057,18 @@ app.post(
         WHERE id = ?
       `;
 
-      db.run(updateProjectQuery, [name, description, category, image, projectId], function (err) {
-        if (err) {
-          console.error("Erreur lors de la mise à jour du projet:", err.message);
-          return res.status(500).send("Erreur lors de la mise à jour du projet.");
-        } else {
-          res.redirect(`/projets/${projectId}`);
+      db.run(
+        updateProjectQuery,
+        [name, description, category, image, projectId],
+        function (err) {
+          if (err) {
+            console.error("Erreur lors de la mise à jour du projet:", err.message);
+            return res.status(500).send("Erreur lors de la mise à jour du projet.");
+          } else {
+            res.redirect(`/projets/${projectId}`);
+          }
         }
-      });
+      );
     });
   }
 );
@@ -1070,7 +1206,9 @@ app.post(
           console.error("Erreur lors de la création de l'utilisateur:", err.message);
           if (err.code === 'SQLITE_CONSTRAINT') {
             if (isAjaxRequest) {
-              return res.status(400).json({ success: false, message: "Nom d'utilisateur ou email déjà pris" });
+              return res
+                .status(400)
+                .json({ success: false, message: "Nom d'utilisateur ou email déjà pris" });
             } else {
               return res.status(400).render('register', {
                 title: 'Créer un compte',
@@ -1178,7 +1316,9 @@ app.post(
       const hashedCurrentPassword = hashPassword(currentPassword, row.salt);
       if (hashedCurrentPassword !== row.password) {
         if (isAjaxRequest) {
-          return res.status(400).json({ success: false, message: 'Mot de passe actuel incorrect' });
+          return res
+            .status(400)
+            .json({ success: false, message: 'Mot de passe actuel incorrect' });
         } else {
           return res.status(400).send('Mot de passe actuel incorrect');
         }
@@ -1206,12 +1346,11 @@ app.post(
                   err.message
                 );
                 if (isAjaxRequest) {
-                  return res
-                    .status(500)
-                    .json({
-                      success: false,
-                      message: 'Erreur lors de la déconnexion après le changement de mot de passe',
-                    });
+                  return res.status(500).json({
+                    success: false,
+                    message:
+                      'Erreur lors de la déconnexion après le changement de mot de passe',
+                  });
                 } else {
                   return res.status(500).send('Erreur lors de la déconnexion');
                 }
@@ -1281,9 +1420,10 @@ app.post(
           db.get(getCommentQuery, [commentId], (err, newComment) => {
             if (err) {
               console.error('Erreur lors de la récupération du commentaire:', err.message);
-              return res
-                .status(500)
-                .json({ success: false, message: "Erreur lors de la récupération du commentaire." });
+              return res.status(500).json({
+                success: false,
+                message: "Erreur lors de la récupération du commentaire.",
+              });
             } else {
               // Ajouter des informations supplémentaires nécessaires pour le front-end
               newComment.canDelete = true; // L'utilisateur peut supprimer son propre commentaire
@@ -1300,7 +1440,6 @@ app.post(
     );
   }
 );
-
 
 // Route pour gérer les réactions aux commentaires
 app.post('/react/:commentId', isAuthenticated, csrfMiddleware, (req, res) => {
@@ -1338,9 +1477,10 @@ app.post('/react/:commentId', isAuthenticated, csrfMiddleware, (req, res) => {
       db.run(deleteReactionQuery, [row.id], function (err) {
         if (err) {
           console.error('Erreur lors de la suppression de la réaction:', err);
-          return res
-            .status(500)
-            .json({ success: false, message: 'Erreur lors de la suppression de la réaction.' });
+          return res.status(500).json({
+            success: false,
+            message: 'Erreur lors de la suppression de la réaction.',
+          });
         }
         // Compter le nombre total de réactions pour cet emoji sur le commentaire
         const countReactionsQuery = `
@@ -1351,9 +1491,10 @@ app.post('/react/:commentId', isAuthenticated, csrfMiddleware, (req, res) => {
         db.get(countReactionsQuery, [commentId, emoji], (err, countRow) => {
           if (err) {
             console.error('Erreur lors du comptage des réactions:', err);
-            return res
-              .status(500)
-              .json({ success: false, message: 'Erreur lors du comptage des réactions.' });
+            return res.status(500).json({
+              success: false,
+              message: 'Erreur lors du comptage des réactions.',
+            });
           } else {
             res.json({ success: true, updatedCount: countRow.count, userHasReacted: false });
           }
@@ -1367,10 +1508,11 @@ app.post('/react/:commentId', isAuthenticated, csrfMiddleware, (req, res) => {
       `;
       db.run(insertReactionQuery, [commentId, userId, emoji, date], function (err) {
         if (err) {
-          console.error('Erreur lors de l\'ajout de la réaction:', err);
-          return res
-            .status(500)
-            .json({ success: false, message: 'Erreur lors de l\'ajout de la réaction.' });
+          console.error("Erreur lors de l'ajout de la réaction:", err);
+          return res.status(500).json({
+            success: false,
+            message: "Erreur lors de l'ajout de la réaction.",
+          });
         }
         // Compter le nombre total de réactions pour cet emoji sur le commentaire
         const countReactionsQuery = `
@@ -1381,9 +1523,10 @@ app.post('/react/:commentId', isAuthenticated, csrfMiddleware, (req, res) => {
         db.get(countReactionsQuery, [commentId, emoji], (err, countRow) => {
           if (err) {
             console.error('Erreur lors du comptage des réactions:', err);
-            return res
-              .status(500)
-              .json({ success: false, message: 'Erreur lors du comptage des réactions.' });
+            return res.status(500).json({
+              success: false,
+              message: 'Erreur lors du comptage des réactions.',
+            });
           } else {
             res.json({ success: true, updatedCount: countRow.count, userHasReacted: true });
           }
@@ -1435,18 +1578,24 @@ app.delete('/comments/:id', isAuthenticated, csrfMiddleware, (req, res) => {
     }
 
     // Vérifier si l'utilisateur est propriétaire du commentaire
-    db.get(`SELECT * FROM comments WHERE id = ? AND userId = ?`, [commentId, userId], (err, comment) => {
-      if (err) {
-        console.error('Erreur lors de la vérification du commentaire:', err.message);
-        return res.status(500).send('Erreur serveur.');
-      }
+    db.get(
+      `SELECT * FROM comments WHERE id = ? AND userId = ?`,
+      [commentId, userId],
+      (err, comment) => {
+        if (err) {
+          console.error('Erreur lors de la vérification du commentaire:', err.message);
+          return res.status(500).send('Erreur serveur.');
+        }
 
-      if (!comment) {
-        return res.status(403).send("Vous n'êtes pas autorisé à supprimer ce commentaire.");
-      }
+        if (!comment) {
+          return res
+            .status(403)
+            .send("Vous n'êtes pas autorisé à supprimer ce commentaire.");
+        }
 
-      deleteComment();
-    });
+        deleteComment();
+      }
+    );
   });
 });
 
@@ -1472,18 +1621,24 @@ app.delete('/projets/:id', isAuthenticated, csrfMiddleware, (req, res) => {
       deleteProject();
     } else {
       // Vérifier si l'utilisateur est le créateur du projet
-      db.get(`SELECT * FROM projects WHERE id = ? AND userId = ?`, [projectId, userId], (err, project) => {
-        if (err) {
-          console.error('Erreur lors de la vérification du projet:', err.message);
-          return res.status(500).send('Erreur serveur.');
-        }
+      db.get(
+        `SELECT * FROM projects WHERE id = ? AND userId = ?`,
+        [projectId, userId],
+        (err, project) => {
+          if (err) {
+            console.error('Erreur lors de la vérification du projet:', err.message);
+            return res.status(500).send('Erreur serveur.');
+          }
 
-        if (!project) {
-          return res.status(403).send("Vous n'êtes pas autorisé à supprimer ce projet.");
-        }
+          if (!project) {
+            return res
+              .status(403)
+              .send("Vous n'êtes pas autorisé à supprimer ce projet.");
+          }
 
-        deleteProject();
-      });
+          deleteProject();
+        }
+      );
     }
 
     function deleteProject() {
@@ -1493,15 +1648,25 @@ app.delete('/projets/:id', isAuthenticated, csrfMiddleware, (req, res) => {
         [projectId],
         function (err) {
           if (err) {
-            console.error('Erreur lors de la suppression des réactions associées:', err.message);
-            return res.status(500).send('Erreur lors de la suppression des réactions associées.');
+            console.error(
+              'Erreur lors de la suppression des réactions associées:',
+              err.message
+            );
+            return res
+              .status(500)
+              .send('Erreur lors de la suppression des réactions associées.');
           }
 
           // Supprimer les commentaires associés au projet
           db.run(`DELETE FROM comments WHERE projectId = ?`, [projectId], function (err) {
             if (err) {
-              console.error('Erreur lors de la suppression des commentaires associés:', err.message);
-              return res.status(500).send('Erreur lors de la suppression des commentaires associés.');
+              console.error(
+                'Erreur lors de la suppression des commentaires associés:',
+                err.message
+              );
+              return res
+                .status(500)
+                .send('Erreur lors de la suppression des commentaires associés.');
             }
 
             // Supprimer le projet
