@@ -1182,7 +1182,7 @@ body.dark-mode .footer {
 #h1nosprojets,
 #termsofservice,
 #privacypolicy,
-#profiletitle {
+#profiletitle, #h1projets, #faq-page, #tools, #starter-kits {
   margin-top: 6%;
 }
 
@@ -1197,4 +1197,18 @@ body.dark-mode .footer {
 p.txt {
   margin-top: 36px !important;
   margin-bottom: 36px !important;
+}
+
+/* Styles spécifiques pour la page Tout le Magasin */
+
+#all-shop h1 {
+  font-size: 3rem;
+  margin-bottom: 20px;
+}
+
+#all-shop h2 {
+  font-size: 2rem;
+  margin-top: 40px;
+  margin-bottom: 20px;
+  color: var(--primary-color);
 }
