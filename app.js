@@ -557,6 +557,21 @@ app.get('/legal-info', csrfMiddleware, (req, res) => {
   res.render('legal-info', { title: 'Mentions Légales' });
 });
 
+// Route pour la politique d'accessibilité
+app.get('/accessibility-policy', csrfMiddleware, (req, res) => {
+  res.render('accessibility-policy', { title: 'Politique d\'accessibilité' });
+});
+
+// Route pour la politique de remborusement
+app.get('/refund-policy', csrfMiddleware, (req, res) => {
+  res.render('refund-policy', { title: 'Politique de remboursement' });
+});
+
+// Route pour les mentions légales
+app.get('/affiliate', csrfMiddleware, (req, res) => {
+  res.render('affiliate', { title: 'Affiliation' });
+});
+
 // Route pour les projets
 app.get('/projets', csrfMiddleware, (req, res) => {
   const query = `
