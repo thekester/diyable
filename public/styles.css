@@ -17,6 +17,7 @@
   --comment-date-color: #888;
   --delete-button-color: red;
   --delete-button-hover-color: darkred;
+  --footer-background-image: url('/images/ft_bg.png'); /* Ajouté */
 }
 
 
@@ -41,6 +42,7 @@ body.dark-mode {
   --comment-date-color: #aaa;
   --delete-button-color: #ff6666;
   --delete-button-hover-color: #ff4c4c;
+  --footer-background-image: none; /* Image retirée en mode sombre */
 }
 
 
@@ -65,6 +67,7 @@ body.dark-mode {
   --comment-date-color: #aaa;
   --delete-button-color: #ff6666;
   --delete-button-hover-color: #ff4c4c;
+  --footer-background-image: none; /* Image retirée en mode sombre */
 }
 
 
@@ -1048,11 +1051,11 @@ form .form-footer a:hover {
   padding-top: 200px;
   position: relative;
   transition: background 0.3s, color 0.3s;
-  background-image: url('/images/ft_bg.png');
   background-size: cover;
   background-repeat: no-repeat;
   background-position: center top;
   animation: fadeInFooter 1s;
+  background-image: var(--footer-background-image);
 }
 
 @keyframes fadeInFooter {
