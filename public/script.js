@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', function () {
   // Récupérer le jeton CSRF depuis la balise meta
   const csrfTokenMeta = document.querySelector('meta[name="csrf-token"]');
-  const csrfToken = csrfTokenMeta ? csrfTokenMeta.getAttribute('content') : '';
+  let csrfToken = csrfTokenMeta ? csrfTokenMeta.getAttribute('content') : '';
 
   // **Implémentation du Mode Sombre**
 
@@ -47,14 +47,11 @@ document.addEventListener('DOMContentLoaded', function () {
   // **Activation des transitions après le chargement**
   document.body.classList.add('transition-enabled');
 
-  // **Code existant**
-
-  // Sélection des boutons de filtre
+  // **Sélection des boutons de filtre**
   const filterButtons = document.querySelectorAll('.filter-button');
   const projectCards = document.querySelectorAll('.project-card');
   const noProjectsMessage = document.getElementById('no-projects-message');
 
-  // Vérifiez que les boutons existent avant de tenter d'accéder à leurs propriétés
   if (filterButtons && filterButtons.length > 0) {
     filterButtons.forEach((button) => {
       button.addEventListener('click', function () {
@@ -67,7 +64,6 @@ document.addEventListener('DOMContentLoaded', function () {
         // Compteur pour les projets visibles
         let projectsVisible = 0;
 
-        // Vérifiez que les cartes existent également
         if (projectCards && projectCards.length > 0) {
           projectCards.forEach((card) => {
             const cardCategory = card.dataset.category ? card.dataset.category.toLowerCase() : '';
@@ -109,11 +105,10 @@ document.addEventListener('DOMContentLoaded', function () {
     console.warn('Aucun bouton de filtre trouvé sur la page.');
   }
 
-  // Exemple d'effet de clic sur le bouton héro
+  // **Effet de clic sur le bouton héro**
   const heroButton = document.querySelector('.hero button');
   if (heroButton) {
     heroButton.addEventListener('click', function () {
-      // Défilement vers la section des projets
       const projectSection = document.querySelector('#projets');
       if (projectSection) {
         projectSection.scrollIntoView({ behavior: 'smooth' });
@@ -123,7 +118,7 @@ document.addEventListener('DOMContentLoaded', function () {
     console.warn('Aucun bouton héro trouvé sur la page.');
   }
 
-  // Gestion de l'affichage des commentaires des projets
+  // **Gestion de l'affichage des commentaires des projets**
   const commentForm = document.getElementById('commentForm');
   if (commentForm) {
     if (!commentForm.classList.contains('listener-attached')) {
@@ -155,26 +150,8 @@ document.addEventListener('DOMContentLoaded', function () {
           body: JSON.stringify(data),
           credentials: 'include',
         })
-          .then((response) => {
-            return response.text().then((text) => {
-              // Tenter de parser le texte en JSON
-              let data;
-              try {
-                data = JSON.parse(text);
-              } catch (error) {
-                console.error('Erreur lors du parsing du JSON:', error);
-                console.error('Réponse non JSON:', text);
-                throw new Error('Réponse du serveur invalide.');
-              }
-
-              if (!response.ok) {
-                console.error('Erreur du serveur:', data);
-                throw new Error(data.message || "Erreur lors de l'ajout du commentaire.");
-              }
-
-              return data;
-            });
-          })
+          .then(handleFetchErrors)
+          .then((response) => response.json())
           .then((data) => {
             if (data.success) {
               // Ajouter le nouveau commentaire au DOM sans recharger la page
@@ -191,7 +168,10 @@ document.addEventListener('DOMContentLoaded', function () {
           })
           .catch((error) => {
             console.error('Erreur réseau:', error);
-            showNotification('error', error.message || 'Une erreur est survenue lors de la publication du commentaire.');
+            showNotification(
+              'error',
+              error.message || 'Une erreur est survenue lors de la publication du commentaire.'
+            );
             if (submitButton) {
               submitButton.disabled = false;
             }
@@ -204,7 +184,21 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
-  // Fonction pour ajouter un commentaire au DOM
+  // **Fonction pour gérer les erreurs de requêtes fetch**
+  function handleFetchErrors(response) {
+    if (response.status === 403) {
+      alert('Votre session a expiré ou est invalide. Veuillez recharger la page.');
+      window.location.reload();
+      throw new Error('Session invalide ou expirée.');
+    } else if (response.status === 401) {
+      alert('Vous n\'êtes pas connecté. Veuillez vous connecter.');
+      window.location.href = '/login';
+      throw new Error('Utilisateur non authentifié.');
+    }
+    return response;
+  }
+
+  // **Fonction pour ajouter un commentaire au DOM**
   function addCommentToDOM(comment) {
     const commentList = document.querySelector('.comment-list');
     if (commentList) {
@@ -221,10 +215,10 @@ document.addEventListener('DOMContentLoaded', function () {
           ${
             comment.canDelete
               ? `
-              <button type="button" class="delete-button" data-comment-id="${comment.id}" title="Supprimer ce commentaire">
-                <i class="fa fa-trash"></i>
-              </button>
-            `
+                <button type="button" class="delete-button" data-comment-id="${comment.id}" title="Supprimer ce commentaire">
+                  <i class="fa fa-trash"></i>
+                </button>
+              `
               : ''
           }
         </div>
@@ -249,7 +243,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
-  // Fonction pour rendre les boutons de réaction
+  // **Fonction pour rendre les boutons de réaction**
   function renderReactions(comment) {
     const reactions = ['👍', '💩', '❤️', '😂'];
     let html = '';
@@ -270,7 +264,7 @@ document.addEventListener('DOMContentLoaded', function () {
     return html;
   }
 
-  // Fonction pour gérer les réactions aux commentaires
+  // **Fonction pour gérer les réactions aux commentaires**
   function reactToComment(event) {
     event.preventDefault();
     const button = event.currentTarget;
@@ -286,29 +280,13 @@ document.addEventListener('DOMContentLoaded', function () {
       headers: {
         'Content-Type': 'application/json',
         'X-CSRF-Token': csrfToken, // Utiliser le jeton CSRF récupéré
+        'X-Requested-With': 'XMLHttpRequest',
       },
       body: JSON.stringify({ emoji }),
-      credentials: 'include', // Inclure les cookies de session
+      credentials: 'include',
     })
-      .then((response) => {
-        return response.text().then((text) => {
-          let data;
-          try {
-            data = JSON.parse(text);
-          } catch (error) {
-            console.error('Erreur lors du parsing du JSON:', error);
-            console.error('Réponse non JSON:', text);
-            throw new Error('Réponse du serveur invalide.');
-          }
-
-          if (!response.ok) {
-            console.error('Erreur du serveur:', data);
-            throw new Error(data.message || 'Erreur lors de la mise à jour de la réaction.');
-          }
-
-          return data;
-        });
-      })
+      .then(handleFetchErrors)
+      .then((response) => response.json())
       .then((data) => {
         if (data.success) {
           // Mettre à jour le compteur de réactions
@@ -320,13 +298,17 @@ document.addEventListener('DOMContentLoaded', function () {
         button.disabled = false; // Réactiver le bouton
       })
       .catch((error) => {
-        showNotification('error', error.message);
+        if (error.message === 'Vous n\'êtes pas connecté.') {
+          showNotification('error', 'Veuillez vous connecter pour réagir aux commentaires.');
+        } else {
+          showNotification('error', error.message || 'Une erreur est survenue.');
+        }
         console.error('Erreur:', error);
         button.disabled = false; // Réactiver le bouton
       });
   }
 
-  // Attacher les événements aux boutons de réaction
+  // **Attacher les événements aux boutons de réaction**
   function attachReactionEventListeners() {
     const reactionButtons = document.querySelectorAll('.reaction-button');
     reactionButtons.forEach((button) => {
@@ -337,7 +319,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  // Fonction pour gérer la suppression (commentaires et projets)
+  // **Fonction pour gérer la suppression (commentaires et projets)**
   function deleteItem(event) {
     event.preventDefault();
     const button = event.currentTarget;
@@ -357,10 +339,11 @@ document.addEventListener('DOMContentLoaded', function () {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
-          'X-CSRF-Token': csrfToken, // Utiliser le jeton CSRF récupéré
+          'X-CSRF-Token': csrfToken,
         },
-        credentials: 'include', // Inclure les cookies de session
+        credentials: 'include',
       })
+        .then(handleFetchErrors)
         .then((response) => {
           if (response.ok) {
             const commentElement = button.closest('.comment');
@@ -393,19 +376,20 @@ document.addEventListener('DOMContentLoaded', function () {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
-          'X-CSRF-Token': csrfToken, // Utiliser le jeton CSRF récupéré
+          'X-CSRF-Token': csrfToken,
         },
-        credentials: 'include', // Inclure les cookies de session
+        credentials: 'include',
       })
+        .then(handleFetchErrors)
         .then((response) => {
-          return response.text().then((text) => {
-            if (response.ok) {
-              window.location.href = '/projets';
-            } else {
+          if (response.ok) {
+            window.location.href = '/projets';
+          } else {
+            return response.text().then((text) => {
               console.error('Erreur du serveur:', text);
               throw new Error(text || 'Erreur lors de la suppression du projet.');
-            }
-          });
+            });
+          }
         })
         .catch((error) => {
           console.error('Erreur lors de la suppression du projet :', error);
@@ -416,7 +400,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
-  // Attacher l'événement aux boutons de suppression
+  // **Attacher l'événement aux boutons de suppression**
   function attachDeleteEventListeners() {
     const deleteButtons = document.querySelectorAll('.delete-button, .delete-button2');
     deleteButtons.forEach((button) => {
@@ -427,20 +411,20 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  // Appeler les fonctions après le chargement du contenu
+  // **Appeler les fonctions après le chargement du contenu**
   attachDeleteEventListeners();
   attachReactionEventListeners();
 
-  // Fonction pour basculer l'affichage du menu déroulant
+  // **Fonction pour basculer l'affichage du menu déroulant**
   function toggleDropdown(event) {
-    event.stopPropagation(); // Empêche la fermeture immédiate du menu
+    event.stopPropagation();
     const dropdownMenu = document.getElementById('dropdownMenu');
     if (dropdownMenu) {
-      dropdownMenu.classList.toggle('show'); // Bascule l'affichage du menu
+      dropdownMenu.classList.toggle('show');
     }
   }
 
-  // Fonctionnalité du menu déroulant pour le nom d'utilisateur
+  // **Gestion du menu déroulant pour le nom d'utilisateur**
   const usernameDropdown = document.getElementById('usernameDropdown');
   if (usernameDropdown) {
     if (!usernameDropdown.classList.contains('listener-attached')) {
@@ -454,7 +438,7 @@ document.addEventListener('DOMContentLoaded', function () {
     console.warn('Élément usernameDropdown non trouvé');
   }
 
-  // Fermer le menu si l'utilisateur clique en dehors de celui-ci
+  // **Fermer le menu si l'utilisateur clique en dehors de celui-ci**
   window.addEventListener('click', function (event) {
     const dropdownMenu = document.getElementById('dropdownMenu');
     if (
@@ -463,18 +447,19 @@ document.addEventListener('DOMContentLoaded', function () {
       !usernameDropdown.contains(event.target) &&
       !dropdownMenu.contains(event.target)
     ) {
-      dropdownMenu.classList.remove('show'); // Cache le menu si on clique ailleurs
+      dropdownMenu.classList.remove('show');
     }
   });
 
+  // **Fonction pour afficher les notifications**
   function showNotification(type, message, callback, countdownSeconds) {
     const notification = document.getElementById('notification');
     if (!notification) {
-      alert(message); // Fallback si l'élément n'existe pas
+      alert(message);
       if (callback) callback();
       return;
     }
-    notification.className = 'notification'; // Réinitialiser les classes
+    notification.className = 'notification';
     if (type === 'success') {
       notification.classList.add('success');
     } else if (type === 'error') {
@@ -498,7 +483,6 @@ document.addEventListener('DOMContentLoaded', function () {
       }, 1000);
     } else {
       notification.textContent = message;
-      // Masquer la notification après 3 secondes
       setTimeout(() => {
         notification.style.display = 'none';
         if (callback) callback();
@@ -531,29 +515,8 @@ document.addEventListener('DOMContentLoaded', function () {
         body: JSON.stringify(data),
         credentials: 'include',
       })
-        .then((response) => {
-          return response.text().then((text) => {
-            console.log('Response Status:', response.status);
-            console.log('Response Headers:', [...response.headers.entries()]);
-            console.log('Response Body:', text);
-
-            let data;
-            try {
-              data = JSON.parse(text);
-            } catch (error) {
-              console.error('Erreur lors du parsing du JSON:', error);
-              console.error('Réponse non JSON:', text);
-              throw new Error('Réponse du serveur invalide.');
-            }
-
-            if (!response.ok) {
-              console.error('Erreur du serveur:', data);
-              throw new Error(data.message || 'Erreur lors de la connexion.');
-            }
-
-            return data;
-          });
-        })
+        .then(handleFetchErrors)
+        .then((response) => response.json())
         .then((data) => {
           if (data.success) {
             const countdownSeconds = 3; // Durée du compte à rebours en secondes
@@ -561,6 +524,7 @@ document.addEventListener('DOMContentLoaded', function () {
               'success',
               'Connexion réussie !',
               () => {
+                // Rediriger vers la page d'accueil
                 window.location.href = '/';
               },
               countdownSeconds
@@ -596,33 +560,18 @@ document.addEventListener('DOMContentLoaded', function () {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-CSRF-Token': csrfToken, // Utiliser le jeton CSRF récupéré
+          'X-CSRF-Token': csrfToken,
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
         },
         body: JSON.stringify(data),
-        credentials: 'include', // Inclure les cookies de session
+        credentials: 'include',
       })
-        .then((response) => {
-          return response.text().then((text) => {
-            let data;
-            try {
-              data = JSON.parse(text);
-            } catch (error) {
-              console.error('Erreur lors du parsing du JSON:', error);
-              console.error('Réponse non JSON:', text);
-              throw new Error('Réponse du serveur invalide.');
-            }
-
-            if (!response.ok) {
-              console.error('Erreur du serveur:', data);
-              throw new Error(data.message || 'Erreur lors de la création du compte.');
-            }
-
-            return data;
-          });
-        })
+        .then(handleFetchErrors)
+        .then((response) => response.json())
         .then((data) => {
           if (data.success) {
-            const countdownSeconds = 3; // Durée du compte à rebours en secondes
+            const countdownSeconds = 3;
             showNotification(
               'success',
               data.message,
@@ -666,33 +615,18 @@ document.addEventListener('DOMContentLoaded', function () {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-CSRF-Token': csrfToken, // Utiliser le jeton CSRF récupéré
+          'X-CSRF-Token': csrfToken,
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
         },
         body: JSON.stringify(data),
-        credentials: 'include', // Inclure les cookies de session
+        credentials: 'include',
       })
-        .then((response) => {
-          return response.text().then((text) => {
-            let data;
-            try {
-              data = JSON.parse(text);
-            } catch (error) {
-              console.error('Erreur lors du parsing du JSON:', error);
-              console.error('Réponse non JSON:', text);
-              throw new Error('Réponse du serveur invalide.');
-            }
-
-            if (!response.ok) {
-              console.error('Erreur du serveur:', data);
-              throw new Error(data.message || 'Erreur lors du changement de mot de passe.');
-            }
-
-            return data;
-          });
-        })
+        .then(handleFetchErrors)
+        .then((response) => response.json())
         .then((data) => {
           if (data.success) {
-            const countdownSeconds = 3; // Durée du compte à rebours en secondes
+            const countdownSeconds = 3;
             showNotification(
               'success',
               data.message,
