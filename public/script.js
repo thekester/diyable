@@ -275,17 +275,18 @@ document.addEventListener('DOMContentLoaded', function () {
     event.preventDefault();
     const button = event.currentTarget;
     button.disabled = true; // Désactiver le bouton pendant la requête
-
+  
     const commentId = button.getAttribute('data-comment-id');
     const emoji = button.getAttribute('data-emoji');
-
+  
     console.log('Réaction envoyée pour le commentaire ID:', commentId, 'avec emoji:', emoji);
-
+  
     fetch(`/react/${commentId}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'X-CSRF-Token': csrfToken, // Utiliser le jeton CSRF récupéré
+        'X-Requested-With': 'XMLHttpRequest', // **En-tête ajouté**
       },
       body: JSON.stringify({ emoji }),
       credentials: 'include', // Inclure les cookies de session
@@ -298,14 +299,19 @@ document.addEventListener('DOMContentLoaded', function () {
           } catch (error) {
             console.error('Erreur lors du parsing du JSON:', error);
             console.error('Réponse non JSON:', text);
-            throw new Error('Réponse du serveur invalide.');
+            // Vérifier le statut HTTP pour déterminer si l'utilisateur n'est pas connecté
+            if (response.status === 401) {
+              throw new Error('Vous n\'êtes pas connecté.');
+            } else {
+              throw new Error('Réponse du serveur invalide.');
+            }
           }
-
+  
           if (!response.ok) {
             console.error('Erreur du serveur:', data);
             throw new Error(data.message || 'Erreur lors de la mise à jour de la réaction.');
           }
-
+  
           return data;
         });
       })
@@ -320,11 +326,16 @@ document.addEventListener('DOMContentLoaded', function () {
         button.disabled = false; // Réactiver le bouton
       })
       .catch((error) => {
-        showNotification('error', error.message);
+        if (error.message === 'Vous n\'êtes pas connecté.') {
+          showNotification('error', 'Veuillez vous connecter pour réagir aux commentaires.');
+        } else {
+          showNotification('error', error.message || 'Une erreur est survenue.');
+        }
         console.error('Erreur:', error);
         button.disabled = false; // Réactiver le bouton
       });
   }
+  
 
   // Attacher les événements aux boutons de réaction
   function attachReactionEventListeners() {

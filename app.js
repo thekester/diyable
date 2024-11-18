@@ -496,9 +496,15 @@ function isAuthenticated(req, res, next) {
   if (req.session.userId) {
     return next();
   } else {
-    res.redirect('/login');
+    // Vérifier si la requête est une requête AJAX
+    if (req.headers['x-requested-with'] === 'XMLHttpRequest' || req.xhr) {
+      res.status(401).json({ success: false, message: 'Vous n\'êtes pas connecté.' });
+    } else {
+      res.redirect('/login');
+    }
   }
 }
+
 
 // Middleware pour valider les entrées utilisateur
 const validateProject = [
