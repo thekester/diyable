@@ -7,56 +7,6 @@ https://www.youtube.com/watch?v=9aLlv0VMlj4
 
 A platform for sharing and discovering Do It Yourself (DIY) projects, from crafts to tech innovations. Whether you enjoy woodworking, home improvement, or creative electronics, this is the place to get inspired and inspire others.
 
-## Project Structure
-
-```
-diyable/
-│
-├── .dockerignore              
-├── .env # Needed for admin
-├── .gitignore
-├── app.js
-├── docker-compose.yml
-├── Dockerfile
-├── LICENSE           # MIT License
-├── package-lock.json          # Generated automatically after `npm init -y`
-├── package.json          
-├── README.md         
-│
-├── actions-runner/             # For the github workflow
-├── assets/
-│   └── images/
-│       └── android-chrome-192x192.png
-│       └── android-chrome-512x512.png
-│       └── apple-touch-icon.png
-│       └── favicon-16x16.png
-│       └── favicon-32x32.png
-│       └── favicon.ico
-│       └── ft_bg.png
-│       └── logo-diyable.png
-│       └── projet-artisanat-exemple.png
-│       └── projet-iot-exemple.png
-├── bdd/
-│   └── diyable.db
-├── views/
-│   └── about.pug
-│   └── contact.pug
-│   └── index.pug
-│   └── layout.pug
-│   └── login.pug
-│   └── projectDetail.pug
-│   └── projets.pug
-│   └── register.pug
-├── public/
-│   └── code/
-│       └── jquery.min.js
-│   └── style/
-│       └── index.css
-│
-│
-└── node_modules/              # Generated automatically after `npm install`
-```
-
 ## Setting Up the Project
 
 1. **Create the Project Directories**:
@@ -136,550 +86,12 @@ To avoid the error of Error: secret option required for sessions you need to run
    node app.js
 ```
 
-# Schéma de la Base de Données
+## Schéma de la Base de Données
 
 ![database graphs](assets/images/diyable-dbv2.png)
 
 > This graph was made using [ChartDB](https://chartdb.io/).
 
-Here is the structure of the database:
-
-```json
-{
-  "fk_info": [
-    {
-      "schema": "",
-      "table": "projects",
-      "column": "userId",
-      "foreign_key_name": "fk_projects_userId_users_id",
-      "reference_schema": "",
-      "reference_table": "users",
-      "reference_column": "id",
-      "fk_def": "FOREIGN KEY (userId) REFERENCES users(id) ON UPDATE NO ACTION ON DELETE NO ACTION"
-    },
-    {
-      "schema": "",
-      "table": "comments",
-      "column": "projectId",
-      "foreign_key_name": "fk_comments_projectId_projects_id",
-      "reference_schema": "",
-      "reference_table": "projects",
-      "reference_column": "id",
-      "fk_def": "FOREIGN KEY (projectId) REFERENCES projects(id) ON UPDATE NO ACTION ON DELETE NO ACTION"
-    },
-    {
-      "schema": "",
-      "table": "comments",
-      "column": "userId",
-      "foreign_key_name": "fk_comments_userId_users_id",
-      "reference_schema": "",
-      "reference_table": "users",
-      "reference_column": "id",
-      "fk_def": "FOREIGN KEY (userId) REFERENCES users(id) ON UPDATE NO ACTION ON DELETE NO ACTION"
-    },
-    {
-      "schema": "",
-      "table": "comment_reactions",
-      "column": "comment_id",
-      "foreign_key_name": "fk_comment_reactions_comment_id_comments_id",
-      "reference_schema": "",
-      "reference_table": "comments",
-      "reference_column": "id",
-      "fk_def": "FOREIGN KEY (comment_id) REFERENCES comments(id) ON UPDATE NO ACTION ON DELETE NO ACTION"
-    },
-    {
-      "schema": "",
-      "table": "comment_reactions",
-      "column": "userId",
-      "foreign_key_name": "fk_comment_reactions_userId_users_id",
-      "reference_schema": "",
-      "reference_table": "users",
-      "reference_column": "id",
-      "fk_def": "FOREIGN KEY (userId) REFERENCES users(id) ON UPDATE NO ACTION ON DELETE NO ACTION"
-    }
-  ],
-  "pk_info": [
-    {
-      "schema": "",
-      "table": "users",
-      "field_count": 1,
-      "column": "id",
-      "pk_def": "PRIMARY KEY (id)"
-    },
-    {
-      "schema": "",
-      "table": "projects",
-      "field_count": 1,
-      "column": "id",
-      "pk_def": "PRIMARY KEY (id)"
-    },
-    {
-      "schema": "",
-      "table": "comments",
-      "field_count": 1,
-      "column": "id",
-      "pk_def": "PRIMARY KEY (id)"
-    },
-    {
-      "schema": "",
-      "table": "comment_reactions",
-      "field_count": 1,
-      "column": "id",
-      "pk_def": "PRIMARY KEY (id)"
-    }
-  ],
-  "columns": [
-    {
-      "schema": "",
-      "table": "users",
-      "name": "id",
-      "type": "integer",
-      "ordinal_position": 0,
-      "nullable": "false",
-      "collation": null,
-      "character_maximum_length": null,
-      "precision": null,
-      "default": null
-    },
-    {
-      "schema": "",
-      "table": "users",
-      "name": "username",
-      "type": "text",
-      "ordinal_position": 1,
-      "nullable": "false",
-      "collation": null,
-      "character_maximum_length": null,
-      "precision": null,
-      "default": null
-    },
-    {
-      "schema": "",
-      "table": "users",
-      "name": "email",
-      "type": "text",
-      "ordinal_position": 2,
-      "nullable": "false",
-      "collation": null,
-      "character_maximum_length": null,
-      "precision": null,
-      "default": null
-    },
-    {
-      "schema": "",
-      "table": "users",
-      "name": "password",
-      "type": "text",
-      "ordinal_position": 3,
-      "nullable": "false",
-      "collation": null,
-      "character_maximum_length": null,
-      "precision": null,
-      "default": null
-    },
-    {
-      "schema": "",
-      "table": "users",
-      "name": "salt",
-      "type": "text",
-      "ordinal_position": 4,
-      "nullable": "false",
-      "collation": null,
-      "character_maximum_length": null,
-      "precision": null,
-      "default": null
-    },
-    {
-      "schema": "",
-      "table": "projects",
-      "name": "id",
-      "type": "integer",
-      "ordinal_position": 0,
-      "nullable": "false",
-      "collation": null,
-      "character_maximum_length": null,
-      "precision": null,
-      "default": null
-    },
-    {
-      "schema": "",
-      "table": "projects",
-      "name": "date",
-      "type": "text",
-      "ordinal_position": 1,
-      "nullable": "false",
-      "collation": null,
-      "character_maximum_length": null,
-      "precision": null,
-      "default": null
-    },
-    {
-      "schema": "",
-      "table": "projects",
-      "name": "name",
-      "type": "text",
-      "ordinal_position": 2,
-      "nullable": "false",
-      "collation": null,
-      "character_maximum_length": null,
-      "precision": null,
-      "default": null
-    },
-    {
-      "schema": "",
-      "table": "projects",
-      "name": "description",
-      "type": "text",
-      "ordinal_position": 3,
-      "nullable": "true",
-      "collation": null,
-      "character_maximum_length": null,
-      "precision": null,
-      "default": null
-    },
-    {
-      "schema": "",
-      "table": "projects",
-      "name": "category",
-      "type": "text",
-      "ordinal_position": 4,
-      "nullable": "true",
-      "collation": null,
-      "character_maximum_length": null,
-      "precision": null,
-      "default": null
-    },
-    {
-      "schema": "",
-      "table": "projects",
-      "name": "image",
-      "type": "text",
-      "ordinal_position": 5,
-      "nullable": "true",
-      "collation": null,
-      "character_maximum_length": null,
-      "precision": null,
-      "default": null
-    },
-    {
-      "schema": "",
-      "table": "projects",
-      "name": "userId",
-      "type": "integer",
-      "ordinal_position": 6,
-      "nullable": "false",
-      "collation": null,
-      "character_maximum_length": null,
-      "precision": null,
-      "default": null
-    },
-    {
-      "schema": "",
-      "table": "comments",
-      "name": "id",
-      "type": "integer",
-      "ordinal_position": 0,
-      "nullable": "false",
-      "collation": null,
-      "character_maximum_length": null,
-      "precision": null,
-      "default": null
-    },
-    {
-      "schema": "",
-      "table": "comments",
-      "name": "projectId",
-      "type": "integer",
-      "ordinal_position": 1,
-      "nullable": "false",
-      "collation": null,
-      "character_maximum_length": null,
-      "precision": null,
-      "default": null
-    },
-    {
-      "schema": "",
-      "table": "comments",
-      "name": "userId",
-      "type": "integer",
-      "ordinal_position": 2,
-      "nullable": "false",
-      "collation": null,
-      "character_maximum_length": null,
-      "precision": null,
-      "default": null
-    },
-    {
-      "schema": "",
-      "table": "comments",
-      "name": "comment",
-      "type": "text",
-      "ordinal_position": 3,
-      "nullable": "false",
-      "collation": null,
-      "character_maximum_length": null,
-      "precision": null,
-      "default": null
-    },
-    {
-      "schema": "",
-      "table": "comments",
-      "name": "date",
-      "type": "text",
-      "ordinal_position": 4,
-      "nullable": "false",
-      "collation": null,
-      "character_maximum_length": null,
-      "precision": null,
-      "default": null
-    },
-    {
-      "schema": "",
-      "table": "comment_reactions",
-      "name": "id",
-      "type": "integer",
-      "ordinal_position": 0,
-      "nullable": "false",
-      "collation": null,
-      "character_maximum_length": null,
-      "precision": null,
-      "default": null
-    },
-    {
-      "schema": "",
-      "table": "comment_reactions",
-      "name": "comment_id",
-      "type": "integer",
-      "ordinal_position": 1,
-      "nullable": "false",
-      "collation": null,
-      "character_maximum_length": null,
-      "precision": null,
-      "default": null
-    },
-    {
-      "schema": "",
-      "table": "comment_reactions",
-      "name": "userId",
-      "type": "integer",
-      "ordinal_position": 2,
-      "nullable": "false",
-      "collation": null,
-      "character_maximum_length": null,
-      "precision": null,
-      "default": null
-    },
-    {
-      "schema": "",
-      "table": "comment_reactions",
-      "name": "emoji",
-      "type": "text",
-      "ordinal_position": 3,
-      "nullable": "false",
-      "collation": null,
-      "character_maximum_length": null,
-      "precision": null,
-      "default": null
-    },
-    {
-      "schema": "",
-      "table": "comment_reactions",
-      "name": "date",
-      "type": "text",
-      "ordinal_position": 4,
-      "nullable": "false",
-      "collation": null,
-      "character_maximum_length": null,
-      "precision": null,
-      "default": null
-    }
-  ],
-  "indexes": [
-    {
-      "schema": "",
-      "table": "users",
-      "name": "sqlite_autoindex_users_1",
-      "column": "id",
-      "index_type": "B-TREE",
-      "cardinality": null,
-      "size": null,
-      "unique": "true",
-      "direction": null,
-      "column_position": 1
-    },
-    {
-      "schema": "",
-      "table": "users",
-      "name": "sqlite_autoindex_users_2",
-      "column": "username",
-      "index_type": "B-TREE",
-      "cardinality": null,
-      "size": null,
-      "unique": "true",
-      "direction": null,
-      "column_position": 1
-    },
-    {
-      "schema": "",
-      "table": "users",
-      "name": "sqlite_autoindex_users_3",
-      "column": "email",
-      "index_type": "B-TREE",
-      "cardinality": null,
-      "size": null,
-      "unique": "true",
-      "direction": null,
-      "column_position": 1
-    },
-    {
-      "schema": "",
-      "table": "projects",
-      "name": "sqlite_autoindex_projects_1",
-      "column": "id",
-      "index_type": "B-TREE",
-      "cardinality": null,
-      "size": null,
-      "unique": "true",
-      "direction": null,
-      "column_position": 1
-    },
-    {
-      "schema": "",
-      "table": "projects",
-      "name": "sqlite_autoindex_projects_2",
-      "column": "name",
-      "index_type": "B-TREE",
-      "cardinality": null,
-      "size": null,
-      "unique": "true",
-      "direction": null,
-      "column_position": 1
-    },
-    {
-      "schema": "",
-      "table": "projects",
-      "name": "sqlite_autoindex_projects_2",
-      "column": "date",
-      "index_type": "B-TREE",
-      "cardinality": null,
-      "size": null,
-      "unique": "true",
-      "direction": null,
-      "column_position": 2
-    },
-    {
-      "schema": "",
-      "table": "projects",
-      "name": "sqlite_autoindex_projects_2",
-      "column": "image",
-      "index_type": "B-TREE",
-      "cardinality": null,
-      "size": null,
-      "unique": "true",
-      "direction": null,
-      "column_position": 3
-    },
-    {
-      "schema": "",
-      "table": "comments",
-      "name": "sqlite_autoindex_comments_1",
-      "column": "id",
-      "index_type": "B-TREE",
-      "cardinality": null,
-      "size": null,
-      "unique": "true",
-      "direction": null,
-      "column_position": 1
-    },
-    {
-      "schema": "",
-      "table": "comment_reactions",
-      "name": "sqlite_autoindex_comment_reactions_1",
-      "column": "id",
-      "index_type": "B-TREE",
-      "cardinality": null,
-      "size": null,
-      "unique": "true",
-      "direction": null,
-      "column_position": 1
-    },
-    {
-      "schema": "",
-      "table": "comment_reactions",
-      "name": "sqlite_autoindex_comment_reactions_2",
-      "column": "comment_id",
-      "index_type": "B-TREE",
-      "cardinality": null,
-      "size": null,
-      "unique": "true",
-      "direction": null,
-      "column_position": 1
-    },
-    {
-      "schema": "",
-      "table": "comment_reactions",
-      "name": "sqlite_autoindex_comment_reactions_2",
-      "column": "userId",
-      "index_type": "B-TREE",
-      "cardinality": null,
-      "size": null,
-      "unique": "true",
-      "direction": null,
-      "column_position": 2
-    },
-    {
-      "schema": "",
-      "table": "comment_reactions",
-      "name": "sqlite_autoindex_comment_reactions_2",
-      "column": "emoji",
-      "index_type": "B-TREE",
-      "cardinality": null,
-      "size": null,
-      "unique": "true",
-      "direction": null,
-      "column_position": 3
-    }
-  ],
-  "tables": [
-    {
-      "schema": "",
-      "table": "users",
-      "rows": -1,
-      "type": "table",
-      "engine": null,
-      "collation": null
-    },
-    {
-      "schema": "",
-      "table": "projects",
-      "rows": -1,
-      "type": "table",
-      "engine": null,
-      "collation": null
-    },
-    {
-      "schema": "",
-      "table": "comments",
-      "rows": -1,
-      "type": "table",
-      "engine": null,
-      "collation": null
-    },
-    {
-      "schema": "",
-      "table": "comment_reactions",
-      "rows": -1,
-      "type": "table",
-      "engine": null,
-      "collation": null
-    }
-  ],
-  "views": [],
-  "database_name": "sqlite",
-  "version": "3.31.1"
-}
-
-```
 
 ## Features
 
@@ -718,7 +130,6 @@ Here is the structure of the database:
 3. **Connect**: Follow your favorite creators and participate in discussions to help improve projects.
 
 
-
 ## Example Branch Management
 
 1. **Switch to Docker Environment Branch**:
@@ -727,6 +138,57 @@ Here is the structure of the database:
 ```
    
    This will set up a new branch `newbranch` that tracks `origin/newbranch`.
+
+
+## Project Structure
+
+```
+diyable/
+│
+├── .dockerignore              
+├── .env # Needed for admin
+├── .gitignore
+├── app.js
+├── docker-compose.yml
+├── Dockerfile
+├── LICENSE           # MIT License
+├── package-lock.json          # Generated automatically after `npm init -y`
+├── package.json          
+├── README.md         
+│
+├── actions-runner/             # For the github workflow
+├── assets/
+│   └── images/
+│       └── android-chrome-192x192.png
+│       └── android-chrome-512x512.png
+│       └── apple-touch-icon.png
+│       └── favicon-16x16.png
+│       └── favicon-32x32.png
+│       └── favicon.ico
+│       └── ft_bg.png
+│       └── logo-diyable.png
+│       └── projet-artisanat-exemple.png
+│       └── projet-iot-exemple.png
+├── bdd/
+│   └── diyable.db
+├── views/
+│   └── about.pug
+│   └── contact.pug
+│   └── index.pug
+│   └── layout.pug
+│   └── login.pug
+│   └── projectDetail.pug
+│   └── projets.pug
+│   └── register.pug
+├── public/
+│   └── code/
+│       └── jquery.min.js
+│   └── style/
+│       └── index.css
+│
+│
+└── node_modules/              # Generated automatically after `npm install`
+```
 
 ## Contribution
 Feel free to contribute to the platform by:
