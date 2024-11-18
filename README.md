@@ -87,13 +87,13 @@ You can run this command only once and keep your session secret in the .env file
 
 1. **Build and Run Using Docker Compose**:
 ```sh
-   docker-compose build
-   docker-compose up -d
+   docker compose build
+   docker compose up -d
 ```
 
 2. **View Logs**:
 ```sh
-   docker-compose logs -f
+   docker compose logs -f
 ```
 
 
@@ -122,11 +122,6 @@ You can run this command only once and keep your session secret in the .env file
   - **Material Type**: Find projects using specific materials like wood, electronics, or textiles.
   - **Category**: Filter projects by category such as *Home Decor*, *Electronics*, or *Gardening*.
 
-## Getting Started
-1. **Sign Up**: Create an account to share your projects, comment on others, and join the community.
-2. **Explore Projects**: Use the filter system to find the projects that interest you the most.
-3. **Connect**: Follow your favorite creators and participate in discussions to help improve projects.
-
 
 ## Example Branch Management
 
@@ -134,59 +129,8 @@ You can run this command only once and keep your session secret in the .env file
 ```sh
    git checkout -b newbranch origin/newbranch
 ```
-   
-   This will set up a new branch `newbranch` that tracks `origin/newbranch`.
+This will set up a new branch `newbranch` that tracks `origin/newbranch`.
 
-
-## Project Structure
-
-```
-diyable/
-│
-├── .dockerignore              
-├── .env # Needed for admin
-├── .gitignore
-├── app.js
-├── docker-compose.yml
-├── Dockerfile
-├── LICENSE           # MIT License
-├── package-lock.json          # Generated automatically after `npm init -y`
-├── package.json          
-├── README.md         
-│
-├── actions-runner/             # For the github workflow
-├── assets/
-│   └── images/
-│       └── android-chrome-192x192.png
-│       └── android-chrome-512x512.png
-│       └── apple-touch-icon.png
-│       └── favicon-16x16.png
-│       └── favicon-32x32.png
-│       └── favicon.ico
-│       └── ft_bg.png
-│       └── logo-diyable.png
-│       └── projet-artisanat-exemple.png
-│       └── projet-iot-exemple.png
-├── bdd/
-│   └── diyable.db
-├── views/
-│   └── about.pug
-│   └── contact.pug
-│   └── index.pug
-│   └── layout.pug
-│   └── login.pug
-│   └── projectDetail.pug
-│   └── projets.pug
-│   └── register.pug
-├── public/
-│   └── code/
-│       └── jquery.min.js
-│   └── style/
-│       └── index.css
-│
-│
-└── node_modules/              # Generated automatically after `npm install`
-```
 
 ## Contribution
 Feel free to contribute to the platform by:
