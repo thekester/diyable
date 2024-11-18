@@ -19,6 +19,7 @@
   --delete-button-hover-color: darkred;
 }
 
+
 body.dark-mode {
   --primary-color: #90caf9; /* Bleu clair pour le mode sombre */
   --primary-color-hover: #5f9ea0;
@@ -27,7 +28,10 @@ body.dark-mode {
   --text-color: #e0e0e0;
   --background-color: #121212;
   --button-text-color: #121212;
-  --hero-background: linear-gradient(135deg, #0d47a1 0%, #1976d2 100%);
+  
+  /* Nouveau dégradé animé pour .hero */
+  --hero-background: linear-gradient(270deg, #0d47a1, #1976d2, #6a1b9a, #8e24aa);
+  
   --hero-text-color: #e0e0e0;
   --footer-background-color: #1e1e1e;
   --footer-text-color: #e0e0e0;
@@ -37,6 +41,57 @@ body.dark-mode {
   --comment-date-color: #aaa;
   --delete-button-color: #ff6666;
   --delete-button-hover-color: #ff4c4c;
+}
+
+
+.dark-mode {
+  --primary-color: #90caf9; /* Bleu clair pour le mode sombre */
+  --primary-color-hover: #5f9ea0;
+  --secondary-color: #66bb6a; /* Vert clair pour le mode sombre */
+  --secondary-color-hover: #4caf50;
+  --text-color: #e0e0e0;
+  --background-color: #121212;
+  --button-text-color: #121212;
+  
+  /* Nouveau dégradé animé pour .hero */
+  --hero-background: linear-gradient(270deg, #0d47a1, #1976d2, #6a1b9a, #8e24aa);
+  
+  --hero-text-color: #e0e0e0;
+  --footer-background-color: #1e1e1e;
+  --footer-text-color: #e0e0e0;
+  --link-color: #bbb;
+  --link-hover-color: var(--secondary-color);
+  --comment-box-background: #1e1e1e;
+  --comment-date-color: #aaa;
+  --delete-button-color: #ff6666;
+  --delete-button-hover-color: #ff4c4c;
+}
+
+
+/* Keyframes pour l'animation du dégradé */
+@keyframes gradientAnimation {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+
+body.dark-mode .hero {
+  background: var(--hero-background);
+  background-size: 800% 800%; /* Augmentez la taille pour une animation fluide */
+  animation: gradientAnimation 15s ease infinite; /* Applique l'animation */
+}
+
+.dark-mode .hero {
+  background: var(--hero-background);
+  background-size: 800% 800%; /* Augmentez la taille pour une animation fluide */
+  animation: gradientAnimation 15s ease infinite; /* Applique l'animation */
 }
 
 /* Importation des polices locales */
@@ -62,12 +117,16 @@ body.dark-mode {
   box-sizing: border-box;
 }
 
+
 body {
   font-family: 'Roboto', sans-serif;
   margin: 0;
   background-color: var(--background-color);
   color: var(--text-color);
   overflow-x: hidden;
+}
+
+body.transition-enabled {
   transition: background-color 0.3s, color 0.3s;
 }
 
@@ -221,7 +280,7 @@ nav button.active {
   height: 26px;
   width: 26px;
   left: 2px;
-  bottom: 2px;
+  /*bottom: 2px;*/
   background-color: var(--text-color);
   transition: transform 0.4s;
   border-radius: 50%;
@@ -243,11 +302,13 @@ h3 .date {
   color: var(--text-color) !important;
 }
 
-/* Section Héro */
+/* Styles pour la classe .hero */
 .hero {
   text-align: center;
   padding: 100px 20px;
   background: var(--hero-background);
+  background-size: 800% 800%; /* Ajouté */
+  animation: gradientAnimation 15s ease infinite; /* Ajouté */
   color: var(--hero-text-color);
   position: relative;
   overflow: hidden;
@@ -262,7 +323,7 @@ h3 .date {
 
 .hero p {
   font-size: 1.5rem;
-  margin-bottom: 30px;
+  margin-bottom: 3%;
   animation: fadeInUp 1.2s;
 }
 
@@ -1156,10 +1217,33 @@ body.dark-mode .footer {
 #h1nosprojets,
 #termsofservice,
 #privacypolicy,
-#profiletitle {
+#profiletitle, #h1projets, #faq-page, #tools, #starter-kits {
   margin-top: 6%;
 }
 
 #titleCreate {
   text-align: center;
+}
+
+#linkprojects {
+  margin: 2%;
+}
+
+p.txt {
+  margin-top: 36px !important;
+  margin-bottom: 36px !important;
+}
+
+/* Styles spécifiques pour la page Tout le Magasin */
+
+#all-shop h1 {
+  font-size: 3rem;
+  margin-bottom: 20px;
+}
+
+#all-shop h2 {
+  font-size: 2rem;
+  margin-top: 40px;
+  margin-bottom: 20px;
+  color: var(--primary-color);
 }

@@ -1,0 +1,44 @@
+//- views/learn/our-story.pug
+
+extends ../layout
+
+block content
+  section.text
+    h1#our-story-page Notre Histoire DIYable
+    p Chez **DIYable**, notre passion est de fournir des solutions DIY (Do It Yourself) de haute qualité pour inspirer et accompagner nos clients dans leurs projets créatifs. Découvrez notre parcours, notre mission et les valeurs qui nous animent.
+
+    //- Section Mission
+    h2 Notre Mission
+    p Notre mission est de rendre le bricolage accessible à tous en offrant des produits innovants, fiables et faciles à utiliser. Nous croyons que chacun a le potentiel de créer, d'inventer et de personnaliser son environnement grâce à des outils et des matériaux adaptés.
+
+    //- Section Histoire
+    h2 Notre Histoire
+    p Fondée en 2020, **DIYable** a commencé comme une petite entreprise familiale avec l'idée de simplifier le bricolage pour les amateurs et les professionnels. Au fil des années, nous avons élargi notre gamme de produits et notre expertise, tout en restant fidèles à notre engagement envers la qualité et le service client.
+
+    //- Section Valeurs
+    h2 Nos Valeurs
+    ul.values
+      li **Innovation** : Nous recherchons constamment de nouvelles idées et technologies pour améliorer nos produits.
+      li **Qualité** : Chaque produit DIYable est conçu et testé pour garantir sa durabilité et son efficacité.
+      li **Accessibilité** : Nous nous efforçons de rendre le bricolage accessible à tous, quels que soient le niveau d'expérience et le budget.
+      li **Satisfaction Client** : La satisfaction de nos clients est au cœur de nos préoccupations. Nous sommes à l'écoute de vos besoins et de vos retours pour mieux vous servir.
+
+    //- Section Équipe
+    h2 Notre Équipe
+    p Notre équipe est composée de passionnés de bricolage, d'ingénieurs, de designers et de spécialistes du service client. Ensemble, nous travaillons à créer des produits qui répondent aux attentes de nos clients et à fournir un support exceptionnel pour assurer le succès de leurs projets DIY.
+
+    //- Section Témoignages (Optionnel)
+    h2 Témoignages
+    .testimonials
+      .testimonial
+        p "DIYable m'a aidé à réaliser mon premier projet de rénovation. Les outils étaient faciles à utiliser et le support client était excellent !" - *Lucie T.*
+      .testimonial
+        p "Grâce à DIYable, j'ai pu créer des décorations personnalisées pour mon intérieur. Les produits sont de grande qualité et les instructions claires." - *Marc B.*
+
+    //- Appel à l'Action (Optionnel)
+    h2 Rejoignez la Communauté DIYable
+    p Que vous soyez un bricoleur débutant ou un artisan expérimenté, rejoignez notre communauté pour partager vos projets, obtenir des conseils et découvrir de nouvelles inspirations.
+    a.btn-grad(href="/register") Créer un Compte
+
+block scripts
+  script(src="/script.js")

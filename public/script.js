@@ -10,10 +10,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
   function applyDarkMode(isDark) {
     if (isDark) {
-      document.body.classList.add('dark-mode');
+      document.documentElement.classList.add('dark-mode');
       if (darkModeToggle) darkModeToggle.checked = true;
     } else {
-      document.body.classList.remove('dark-mode');
+      document.documentElement.classList.remove('dark-mode');
       if (darkModeToggle) darkModeToggle.checked = false;
     }
   }
@@ -43,6 +43,9 @@ document.addEventListener('DOMContentLoaded', function () {
       applyDarkMode(e.matches);
     }
   });
+
+  // **Activation des transitions après le chargement**
+  document.body.classList.add('transition-enabled');
 
   // **Code existant**
 
@@ -151,7 +154,7 @@ document.addEventListener('DOMContentLoaded', function () {
           },
           body: JSON.stringify(data),
           credentials: 'include',
-        })        
+        })
           .then((response) => {
             return response.text().then((text) => {
               // Tenter de parser le texte en JSON
@@ -166,7 +169,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
               if (!response.ok) {
                 console.error('Erreur du serveur:', data);
-                throw new Error(data.message || 'Erreur lors de l\'ajout du commentaire.');
+                throw new Error(data.message || "Erreur lors de l'ajout du commentaire.");
               }
 
               return data;
@@ -179,7 +182,7 @@ document.addEventListener('DOMContentLoaded', function () {
               // Réinitialiser le formulaire
               commentForm.reset();
             } else {
-              console.error('Erreur lors de l\'ajout du commentaire:', data.message);
+              console.error("Erreur lors de l'ajout du commentaire:", data.message);
               showNotification('error', data.message || 'Une erreur est survenue.');
             }
             if (submitButton) {
@@ -195,9 +198,9 @@ document.addEventListener('DOMContentLoaded', function () {
           });
       });
       commentForm.classList.add('listener-attached');
-      console.log('Écouteur d\'événement ajouté au formulaire de commentaire');
+      console.log("Écouteur d'événement ajouté au formulaire de commentaire");
     } else {
-      console.log('Écouteur déjà attaché au formulaire de commentaire');
+      console.log("Écouteur déjà attaché au formulaire de commentaire");
     }
   }
 
@@ -443,9 +446,9 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!usernameDropdown.classList.contains('listener-attached')) {
       usernameDropdown.addEventListener('click', toggleDropdown);
       usernameDropdown.classList.add('listener-attached');
-      console.log('Écouteur d\'événement ajouté à usernameDropdown');
+      console.log("Écouteur d'événement ajouté à usernameDropdown");
     } else {
-      console.log('Écouteur déjà attaché à usernameDropdown');
+      console.log("Écouteur déjà attaché à usernameDropdown");
     }
   } else {
     console.warn('Élément usernameDropdown non trouvé');
