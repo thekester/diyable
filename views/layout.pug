@@ -7,6 +7,16 @@ html(lang="fr")
     meta(name="csrf-token" content=csrfToken)
     meta(name="viewport" content="width=device-width, initial-scale=1.0")
     title #{title} - DIY able
+    //- Script pour appliquer le mode sombre avant le chargement du CSS
+    script.
+      (function() {
+        const userPrefersDark = localStorage.getItem('dark-mode');
+        const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+        if (userPrefersDark === 'true' || (userPrefersDark === null && systemPrefersDark)) {
+          document.documentElement.classList.add('dark-mode');
+        }
+      })();
     link(rel="stylesheet", href="/styles.css")
     //- Favicons
     link(rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png")
@@ -95,7 +105,7 @@ html(lang="fr")
           .footer-socials
             a.u-url(rel="me", href="https://linkedin.com/in/votre-profil", "aria-label"="LinkedIn", itemprop="sameAs")
               i.fa-brands.fa-linkedin
-            a.u-url(rel="me", href="https://github.com/votre-profil", "aria-label"="GitHub", itemprop="sameAs")
+            a.u-url(rel="me", href="https://github.com/thekester/diyable", "aria-label"="GitHub", itemprop="sameAs")
               i.fa-brands.fa-github
             a.u-url(rel="me", href="https://twitter.com/votre-profil", "aria-label"="Twitter", itemprop="sameAs")
               i.fa-brands.fa-twitter

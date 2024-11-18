@@ -1,0 +1,42 @@
+//- views/learn/faq.pug
+
+extends ../layout
+
+block content
+  section.text
+    h1#faq-page Foire Aux Questions (FAQ)
+    p Retrouvez ici les réponses aux questions les plus fréquentes concernant **diyable**. Si vous avez d'autres questions, n'hésitez pas à nous [contacter](/contact).
+
+    //- Liste des questions et réponses
+    dl.faq-list
+      dt Quelle est la politique de retour ?
+      dd Nous acceptons les retours dans un délai de 30 jours suivant la réception de votre commande. Les produits doivent être dans leur état d'origine. Pour initier un retour, veuillez consulter notre [Politique de Remboursement](/refund-policy).
+
+      dt Quels sont les modes de paiement acceptés ?
+      dd Nous acceptons les paiements par carte de crédit (Visa, MasterCard, American Express), PayPal et virement bancaire sécurisé.
+
+      dt Comment suivre ma commande ?
+      dd Une fois votre commande expédiée, vous recevrez un email contenant un numéro de suivi. Vous pourrez suivre l'état de votre livraison via le site du transporteur.
+
+      dt Proposez-vous des kits de démarrage pour débutants ?
+      dd Oui, nous proposons une gamme de kits de démarrage adaptés aux débutants. Ces kits contiennent tout le nécessaire pour vous lancer dans vos premiers projets DIY. Vous pouvez les trouver dans la section [Starter Kits](/shop/starter-kits).
+
+      dt Comment contacter le service client ?
+      dd Vous pouvez nous contacter via notre page [Contact](/contact) ou par email à support@diyable.com. Notre équipe est disponible du lundi au vendredi de 9h à 18h pour répondre à vos questions.
+
+      dt Offrez-vous des réductions pour les commandes en gros ?
+      dd Oui, nous proposons des tarifs dégressifs pour les commandes en gros. Veuillez nous contacter directement via [Contact](/contact) pour plus d'informations.
+
+      dt Comment créer un compte sur diyable ?
+      dd Cliquez sur le bouton "Créer un compte" en haut à droite de notre site, remplissez le formulaire d'inscription avec vos informations personnelles, puis validez votre inscription. Vous pourrez ensuite vous connecter et accéder à toutes les fonctionnalités de notre site.
+
+      dt Les produits sont-ils garantis ?
+      dd Oui, tous nos produits bénéficient d'une garantie de 1 an contre tout défaut de fabrication. Pour toute réclamation, veuillez nous contacter via notre page [Contact](/contact).
+
+      dt Proposez-vous des tutoriels pour vos produits ?
+      dd Absolument ! Nous avons une section dédiée aux tutoriels et projets DIY dans notre [Blog](/learn/blog) où vous trouverez des guides détaillés pour utiliser nos produits et réaliser vos propres créations.
+
+      //- Ajoutez autant de questions et réponses que nécessaire
+
+block scripts
+  script(src="/script.js")

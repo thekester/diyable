@@ -30,6 +30,9 @@ app.use(express.urlencoded({ extended: true }));
 // Pour servir des fichiers statiques (comme le CSS, le JavaScript)
 app.use(express.static('public'));
 app.use('/images', express.static(path.join(__dirname, 'assets', 'images'))); // Servir les images
+app.use('/learn', express.static(path.join(__dirname, 'views', 'learn'))); // Servir les images
+app.use('/shop', express.static(path.join(__dirname, 'views', 'shop'))); // Servir les images
+
 
 // Configuration du moteur de template (Pug)
 app.set('view engine', 'pug');
@@ -556,6 +559,77 @@ app.get('/privacy-policy', csrfMiddleware, (req, res) => {
 app.get('/legal-info', csrfMiddleware, (req, res) => {
   res.render('legal-info', { title: 'Mentions Légales' });
 });
+
+// Route pour la politique d'accessibilité
+app.get('/accessibility-policy', csrfMiddleware, (req, res) => {
+  res.render('accessibility-policy', { title: 'Politique d\'accessibilité' });
+});
+
+// Route pour la politique de remboursement
+app.get('/refund-policy', csrfMiddleware, (req, res) => {
+  res.render('refund-policy', { title: 'Politique de remboursement' });
+});
+
+// Route pour l'affiliation
+app.get('/affiliate', csrfMiddleware, (req, res) => {
+  res.render('affiliate', { title: 'Affiliation' });
+});
+
+// Route pour le blog
+app.get('/learn/blog', csrfMiddleware, (req, res) => {
+  res.render('learn/blog', { title: 'Blog' });
+});
+
+// Route pour la faq
+app.get('/learn/faq', csrfMiddleware, (req, res) => {
+  res.render('learn/faq', { title: 'Faq' });
+});
+
+// Route pour our-story
+app.get('/learn/our-story', csrfMiddleware, (req, res) => {
+  res.render('learn/our-story', { title: 'Our story' });
+});
+
+// Route pour les tips tricks
+app.get('/learn/tips-tricks', csrfMiddleware, (req, res) => {
+  res.render('learn/tips-tricks', { title: 'Tips-tricks' });
+});
+
+// Route pour les tutorials
+app.get('/learn/tutorials', csrfMiddleware, (req, res) => {
+  res.render('learn/tutorials', { title: 'tutorials' });
+});
+
+// Route pour la page principale de la boutique
+app.get('/shop', csrfMiddleware, (req, res) => {
+  res.render('shop/index', { title: 'Boutique DIYable' });
+});
+
+// Route pour les Outils & Fournitures
+app.get('/shop/tools', csrfMiddleware, (req, res) => {
+  res.render('shop/tools', { title: 'Outils & Fournitures' });
+});
+
+// Route pour les Accessoires
+app.get('/shop/accessories', csrfMiddleware, (req, res) => {
+  res.render('shop/accessories', { title: 'Accessoires' });
+});
+
+// Route pour Tout le Magasin
+app.get('/shop/all', csrfMiddleware, (req, res) => {
+  res.render('shop/all', { title: 'Tout le Magasin' });
+});
+
+// Route pour les starters kits
+app.get('/shop/starter-kits', csrfMiddleware, (req, res) => {
+  res.render('shop/starter-kits', { title: 'Starter-kits' });
+});
+
+// Route pour les projets DIY
+app.get('/shop/projects', csrfMiddleware, (req, res) => {
+  res.render('shop/projects', { title: 'Projets DIY' });
+});
+
 
 // Route pour les projets
 app.get('/projets', csrfMiddleware, (req, res) => {

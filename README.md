@@ -29,6 +29,8 @@ A platform for sharing and discovering Do It Yourself (DIY) projects, from craft
    npm install express pug sqlite3 dotenv body-parser express-session multer csurf express-validator
 ```
 
+You need the follow the .env configuration, if you don't do that you'll obtain an error like that: Erreur lors de la création de l'utilisateur admin: Error: Informations d'admin manquantes
+
 ## Configuration in the .env
 To use a specific address for the diyable app you can set the PORT var in the .env like that: PORT=5133 for example
 With that you can easily set the address for the app in order to modify easily the port to avoid the following error Error: listen EADDRINUSE: address already in use :::5136
